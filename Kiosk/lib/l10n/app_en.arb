@@ -1,0 +1,17 @@
+{
+  "appTitle": "Vending Kiosk",
+  "cart": "Cart",
+  "total": "Total:",
+  "payNow": "PAY NOW",
+  "payment": "Payment",
+  "scanQr": "Scan QR code with your banking app",
+  "failedQr": "Failed to load Payment QR",
+  "adminConfirm": "Admin Confirmation",
+  "enterPin": "Enter PIN",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "invalidPin": "Invalid PIN",
+  "addedProduct": "Added {product}",
+  "productNotFound": "Product not found",
+  "paymentSuccess": "Payment Successful!"
+}

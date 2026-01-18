@@ -1,0 +1,17 @@
+{
+  "appTitle": "自动售货机",
+  "cart": "购物车",
+  "total": "总计:",
+  "payNow": "立即支付",
+  "payment": "支付",
+  "scanQr": "请使用银行App扫描二维码",
+  "failedQr": "无法加载支付二维码",
+  "adminConfirm": "管理员确认",
+  "enterPin": "输入PIN码",
+  "cancel": "取消",
+  "confirm": "确认",
+  "invalidPin": "无效的PIN码",
+  "addedProduct": "已添加 {product}",
+  "productNotFound": "未找到商品",
+  "paymentSuccess": "支付成功!"
+}

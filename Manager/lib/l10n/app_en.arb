@@ -1,0 +1,18 @@
+{
+  "appTitle": "Vending Manager",
+  "addProduct": "Add/Edit Product",
+  "uploadQr": "Upload Payment QR",
+  "scanBarcode": "Scan Barcode",
+  "productName": "Product Name",
+  "price": "Price",
+  "saveProduct": "Save Product",
+  "successSave": "Product saved successfully",
+  "errorSave": "Failed to save product",
+  "successUpload": "QR Code uploaded successfully",
+  "errorUpload": "Failed to upload QR Code",
+  "selectImage": "Select Image",
+  "uploadToServer": "Upload to Server",
+  "barcodeRequired": "Please enter barcode",
+  "nameRequired": "Please enter name",
+  "priceRequired": "Please enter price"
+}

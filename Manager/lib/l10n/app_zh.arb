@@ -1,0 +1,18 @@
+{
+  "appTitle": "自动售货机管理",
+  "addProduct": "添加/编辑商品",
+  "uploadQr": "上传支付二维码",
+  "scanBarcode": "扫描条形码",
+  "productName": "商品名称",
+  "price": "价格",
+  "saveProduct": "保存商品",
+  "successSave": "商品保存成功",
+  "errorSave": "商品保存失败",
+  "successUpload": "二维码上传成功",
+  "errorUpload": "二维码上传失败",
+  "selectImage": "选择图片",
+  "uploadToServer": "上传到服务器",
+  "barcodeRequired": "请输入条形码",
+  "nameRequired": "请输入商品名称",
+  "priceRequired": "请输入价格"
+}
