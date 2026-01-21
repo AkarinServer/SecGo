@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:manager/models/product.dart';
+import 'package:manager/models/kiosk.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -20,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2, // Incremented version
+      version: 3, // Incremented version
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -38,6 +39,21 @@ class DatabaseHelper {
         type TEXT
       )
     ''');
+    
+    await _createKiosksTable(db);
+  }
+
+  Future<void> _createKiosksTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE kiosks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip TEXT NOT NULL,
+        port INTEGER NOT NULL,
+        pin TEXT NOT NULL,
+        name TEXT,
+        last_synced INTEGER
+      )
+    ''');
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -46,8 +62,12 @@ class DatabaseHelper {
       await db.execute('ALTER TABLE products ADD COLUMN size TEXT');
       await db.execute('ALTER TABLE products ADD COLUMN type TEXT');
     }
+    if (oldVersion < 3) {
+      await _createKiosksTable(db);
+    }
   }
 
+  // Product Methods
   Future<void> upsertProduct(Product product) async {
     final db = await instance.database;
     await db.insert(
@@ -75,5 +95,38 @@ class DatabaseHelper {
     final db = await instance.database;
     final maps = await db.query('products');
     return maps.map((json) => Product.fromJson(json)).toList();
+  }
+
+  // Kiosk Methods
+  Future<int> insertKiosk(Kiosk kiosk) async {
+    final db = await instance.database;
+    // Check if kiosk with same IP exists, update if so
+    final existing = await db.query(
+      'kiosks',
+      where: 'ip = ?',
+      whereArgs: [kiosk.ip],
+    );
+
+    if (existing.isNotEmpty) {
+      return await db.update(
+        'kiosks',
+        kiosk.toMap(),
+        where: 'ip = ?',
+        whereArgs: [kiosk.ip],
+      );
+    } else {
+      return await db.insert('kiosks', kiosk.toMap());
+    }
+  }
+
+  Future<List<Kiosk>> getAllKiosks() async {
+    final db = await instance.database;
+    final maps = await db.query('kiosks', orderBy: 'last_synced DESC');
+    return maps.map((map) => Kiosk.fromMap(map)).toList();
+  }
+  
+  Future<int> deleteKiosk(int id) async {
+    final db = await instance.database;
+    return await db.delete('kiosks', where: 'id = ?', whereArgs: [id]);
   }
 }

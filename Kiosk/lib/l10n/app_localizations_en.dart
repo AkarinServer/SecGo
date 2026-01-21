@@ -50,7 +50,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get productNotFound => 'Product not found';
+  String productNotFound(Object barcode) {
+    return 'Can\'t find product $barcode';
+  }
 
   @override
   String get paymentSuccess => 'Payment Successful!';

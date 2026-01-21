@@ -42,3 +42,8 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Bundle ML Kit barcode scanning model to support devices without Google Play Services
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+}

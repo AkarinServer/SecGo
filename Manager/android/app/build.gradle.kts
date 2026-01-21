@@ -24,7 +24,7 @@ android {
         applicationId = "com.example.manager"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,4 +41,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Bundle ML Kit barcode scanning model to support devices without Google Play Services
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
 }

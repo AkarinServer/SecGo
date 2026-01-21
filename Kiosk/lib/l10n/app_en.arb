@@ -12,7 +12,7 @@
   "confirm": "Confirm",
   "invalidPin": "Invalid PIN",
   "addedProduct": "Added {product}",
-  "productNotFound": "Product not found",
+  "productNotFound": "Can't find product {barcode}",
   "paymentSuccess": "Payment Successful!",
   "setupPin": "Setup Admin PIN",
   "setAdminPin": "Set Admin PIN",

@@ -12,7 +12,7 @@
   "confirm": "确认",
   "invalidPin": "无效的PIN码",
   "addedProduct": "已添加 {product}",
-  "productNotFound": "未找到商品",
+  "productNotFound": "未找到商品 {barcode}",
   "paymentSuccess": "支付成功!",
   "storeName": "SecGo 便利店",
   "clearCart": "清空购物车",

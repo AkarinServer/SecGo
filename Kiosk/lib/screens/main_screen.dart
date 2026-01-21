@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Add intl for date formatting
+import 'package:kiosk/db/database_helper.dart';
 import 'package:kiosk/models/product.dart';
 import 'package:kiosk/screens/payment_screen.dart';
 import 'package:kiosk/screens/settings_screen.dart';
-import 'package:kiosk/services/api_service.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
 
@@ -17,6 +17,59 @@ class CartItem {
   double get total => product.price * quantity;
 }
 
+class BarcodeOverlayPainter extends CustomPainter {
+  final BarcodeCapture capture;
+  final Size widgetSize;
+
+  BarcodeOverlayPainter({
+    required this.capture,
+    required this.widgetSize,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+
+    // Use the image size from the capture
+    final Size imageSize = capture.size; // e.g. 1280x720
+
+    if (imageSize.width == 0 || imageSize.height == 0) {
+      return;
+    }
+
+    // Calculate scale factors to map image coordinates to widget coordinates
+    final double scaleX = widgetSize.width / imageSize.width;
+    final double scaleY = widgetSize.height / imageSize.height;
+
+    for (final barcode in capture.barcodes) {
+      if (barcode.corners.isEmpty) continue;
+
+      final path = Path();
+      // Move to the first corner
+      final first = barcode.corners.first;
+      path.moveTo(first.dx * scaleX, first.dy * scaleY);
+
+      // Draw lines to subsequent corners
+      for (int i = 1; i < barcode.corners.length; i++) {
+        final point = barcode.corners[i];
+        path.lineTo(point.dx * scaleX, point.dy * scaleY);
+      }
+      
+      // Close the loop
+      path.close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant BarcodeOverlayPainter oldDelegate) {
+    return oldDelegate.capture != capture;
+  }
+}
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -25,12 +78,30 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  final ApiService _apiService = ApiService();
+  final DatabaseHelper _db = DatabaseHelper.instance;
   final Map<String, CartItem> _cartItems = {}; // Use Map for O(1) lookups
   bool _isProcessing = false;
-  // Initialize with Front Camera
+  
+  // Use the front camera as requested.
   final MobileScannerController _scannerController = MobileScannerController(
     facing: CameraFacing.front,
+    cameraResolution: const Size(1280, 720),
+    autoZoom: true,
+    formats: const [
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+      BarcodeFormat.upcA,
+      BarcodeFormat.upcE,
+      BarcodeFormat.code128,
+      BarcodeFormat.code39,
+      BarcodeFormat.code93,
+      BarcodeFormat.itf,
+      BarcodeFormat.codabar,
+      BarcodeFormat.qrCode,
+    ],
+    detectionSpeed: DetectionSpeed.normal,
+    detectionTimeoutMs: 250,
+    returnImage: false, // Improves performance on older devices
   );
 
   @override
@@ -71,15 +142,18 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _handleBarcodeDetect(BarcodeCapture capture) async {
+    // Only process logic if not already processing
     if (_isProcessing) return;
 
     final List<Barcode> barcodes = capture.barcodes;
     if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
       final String code = barcodes.first.rawValue!;
+      debugPrint('Detected barcode: $code');
 
       setState(() => _isProcessing = true);
-
-      final product = await _apiService.getProduct(code);
+      
+      // ... processing logic ...
+      final product = await _db.getProduct(code);
       if (product != null) {
         _addToCart(product);
         if (mounted) {
@@ -93,7 +167,7 @@ class _MainScreenState extends State<MainScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.productNotFound)),
+            SnackBar(content: Text(AppLocalizations.of(context)!.productNotFound(code))),
           );
         }
       }
@@ -101,6 +175,49 @@ class _MainScreenState extends State<MainScreen> {
       await Future.delayed(const Duration(seconds: 1)); // Faster scan interval
       if (mounted) {
         setState(() => _isProcessing = false);
+      }
+    }
+  }
+
+  void _handleBarcodeError(Object error, StackTrace stackTrace) {
+    debugPrint('Barcode scan error: $error');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Scan error: $error')),
+      );
+    }
+  }
+
+  Future<void> _testScanFile() async {
+    const String filePath = '/sdcard/DCIM/Camera/IMG_20260122_024901.jpg';
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Analyzing debug image...")),
+        );
+      }
+      
+      final BarcodeCapture? capture = await _scannerController.analyzeImage(filePath);
+      
+      if (capture != null && capture.barcodes.isNotEmpty) {
+        await _handleBarcodeDetect(capture);
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Found ${capture.barcodes.length} barcodes in image")),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("No barcodes found in debug image")),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error analyzing image: $e")),
+        );
       }
     }
   }
@@ -315,6 +432,12 @@ class _MainScreenState extends State<MainScreen> {
                           label: Text(l10n.noBarcodeItem, style: const TextStyle(color: Colors.grey)),
                         ),
                         const SizedBox(width: 16),
+                        // Debug Scan Button
+                        IconButton(
+                          icon: const Icon(Icons.image_search, color: Colors.grey),
+                          onPressed: _testScanFile,
+                          tooltip: "Debug Scan File",
+                        ),
                          // Settings Button (Hidden access)
                         IconButton(
                           icon: const Icon(Icons.settings, color: Colors.grey),
@@ -367,7 +490,7 @@ class _MainScreenState extends State<MainScreen> {
             ],
           ),
           
-          // Layer 2: Camera Overlay (Suspension at bottom-left)
+              // Layer 2: Camera Overlay (Suspension at bottom-left)
           Positioned(
             left: 20,
             bottom: 100, // Above the footer
@@ -390,6 +513,36 @@ class _MainScreenState extends State<MainScreen> {
                 child: MobileScanner(
                   controller: _scannerController,
                   onDetect: _handleBarcodeDetect,
+                  onDetectError: _handleBarcodeError,
+                  tapToFocus: true,
+                  fit: BoxFit.cover,
+                  overlayBuilder: (context, constraints) {
+                    return ValueListenableBuilder(
+                      valueListenable: _scannerController,
+                      builder: (context, value, child) {
+                        // In MobileScanner 7.x, value is MobileScannerState
+                        // We need to check if we have a valid capture in the stream or state?
+                        // Wait, MobileScannerState does NOT have 'capture'. 
+                        // We must listen to the 'barcodes' stream for the overlay data.
+                        return StreamBuilder<BarcodeCapture>(
+                          stream: _scannerController.barcodes,
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData || snapshot.data == null) {
+                               return const SizedBox();
+                            }
+                            return IgnorePointer(
+                              child: CustomPaint(
+                                painter: BarcodeOverlayPainter(
+                                  capture: snapshot.data!,
+                                  widgetSize: Size(constraints.maxWidth, constraints.maxHeight),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ),

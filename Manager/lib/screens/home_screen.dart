@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:manager/screens/product_screen.dart';
+import 'package:manager/screens/product_list_screen.dart';
 import 'package:manager/screens/qr_upload_screen.dart';
 import 'package:manager/screens/sync_kiosk_screen.dart';
-import 'package:manager/screens/settings_screen.dart'; // Import SettingsScreen
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:manager/screens/settings_screen.dart';
+import 'package:manager/l10n/app_localizations.dart';
+import 'package:manager/widgets/kiosk_drawer.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -12,6 +13,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.appTitle)),
+      drawer: const KioskDrawer(),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -21,7 +23,7 @@ class HomeScreen extends StatelessWidget {
               label: AppLocalizations.of(context)!.addProduct,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ProductScreen()),
+                MaterialPageRoute(builder: (_) => const ProductListScreen()),
               ),
             ),
             const SizedBox(height: 20),

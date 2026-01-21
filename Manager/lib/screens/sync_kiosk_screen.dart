@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:manager/services/kiosk_client/kiosk_client.dart';
+import 'package:manager/db/database_helper.dart';
+import 'package:manager/models/kiosk.dart';
 import 'dart:convert';
 
 class SyncKioskScreen extends StatefulWidget {
@@ -16,6 +18,7 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
   String? _statusMessage;
 
   void _onQrDetect(BarcodeCapture capture) {
+    if (_isSyncing) return;
     final List<Barcode> barcodes = capture.barcodes;
     if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
       final String code = barcodes.first.rawValue!;
@@ -39,16 +42,27 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
     final success = await _kioskService.syncProductsToKiosk(ip, port, pin);
 
     if (mounted) {
-      setState(() {
-        _isSyncing = false;
-        _statusMessage = success ? 'Sync Successful!' : 'Sync Failed!';
-      });
-      
       if (success) {
+        // Keep _isSyncing true to prevent further scans
+        
+        // Save Kiosk to DB
+        await DatabaseHelper.instance.insertKiosk(Kiosk(
+          ip: ip,
+          port: port,
+          pin: pin,
+          name: 'Kiosk $ip', // Default name
+          lastSynced: DateTime.now().millisecondsSinceEpoch,
+        ));
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kiosk Synced Successfully')),
+          const SnackBar(content: Text('Kiosk Synced & Paired Successfully')),
         );
         Navigator.pop(context);
+      } else {
+        setState(() {
+          _isSyncing = false;
+          _statusMessage = 'Sync Failed!';
+        });
       }
     }
   }

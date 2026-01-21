@@ -179,8 +179,8 @@ abstract class AppLocalizations {
   /// No description provided for @productNotFound.
   ///
   /// In en, this message translates to:
-  /// **'Product not found'**
-  String get productNotFound;
+  /// **'Can\'t find product {barcode}'**
+  String productNotFound(Object barcode);
 
   /// No description provided for @paymentSuccess.
   ///

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:manager/models/product.dart';
 import 'package:manager/screens/home_screen.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:manager/l10n/app_localizations.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 

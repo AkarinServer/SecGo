@@ -50,7 +50,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get productNotFound => '未找到商品';
+  String productNotFound(Object barcode) {
+    return '未找到商品 $barcode';
+  }
 
   @override
   String get paymentSuccess => '支付成功!';

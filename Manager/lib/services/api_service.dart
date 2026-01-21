@@ -3,9 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:manager/models/product.dart';
 
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:manager/models/product.dart';
 import 'package:manager/services/settings_service.dart';
 import 'package:manager/services/middleware/product_middleware.dart';
-import 'package:manager/services/middleware/open_food_facts_middleware.dart';
 import 'package:manager/services/middleware/universal_product_middleware.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -21,55 +24,37 @@ class ApiService {
 
   Future<Product?> getProduct(String barcode) async {
     try {
-      // 1. Try Server first (if available)
-      try {
-        final response = await http.get(Uri.parse('$baseUrl/products/$barcode')).timeout(const Duration(seconds: 2));
-        if (response.statusCode == 200) {
-          return Product.fromJson(jsonDecode(response.body));
-        }
-      } catch (_) {}
-
-      // 2. Try configured External API
+      // 1. Try configured External API
       final apiUrl = await _settingsService.getApiUrl();
-      final middlewareType = await _settingsService.getMiddlewareType();
-      
-      ProductMiddleware middleware;
-      if (middlewareType == 'custom') {
-        middleware = UniversalProductMiddleware();
-      } else {
-        middleware = OpenFoodFactsMiddleware();
-      }
+      // Always use Universal Middleware
+      ProductMiddleware middleware = UniversalProductMiddleware();
 
       if (apiUrl.isNotEmpty) {
         String fullUrl;
         Map<String, String> headers = {};
 
-        if (middlewareType == 'open_food_facts') {
-           fullUrl = '$apiUrl$barcode.json';
+        // Universal API (AliCloud) logic
+        // Pattern: https://barcode100.market.alicloudapi.com/getBarcode?Code={barcode}
+        // We assume the user set the base URL to: https://barcode100.market.alicloudapi.com/getBarcode
+        
+        if (apiUrl.contains('?')) {
+          fullUrl = '$apiUrl$barcode'; // e.g. ...?Code=
         } else {
-           // Universal API (AliCloud) logic
-           // Pattern: https://barcode100.market.alicloudapi.com/getBarcode?Code={barcode}
-           // We assume the user set the base URL to: https://barcode100.market.alicloudapi.com/getBarcode
-           
-           if (apiUrl.contains('?')) {
-             fullUrl = '$apiUrl$barcode'; // e.g. ...?Code=
-           } else {
-             // If user entered base path without query param, we append it
-             // This is a bit specific to this AliCloud API, but we can make it smart
-             // For now, let's assume the user configures the full prefix like:
-             // https://barcode100.market.alicloudapi.com/getBarcode?Code=
-             fullUrl = '$apiUrl$barcode';
-           }
+          // If user entered base path without query param, we append it
+          // This is a bit specific to this AliCloud API, but we can make it smart
+          // For now, let's assume the user configures the full prefix like:
+          // https://barcode100.market.alicloudapi.com/getBarcode?Code=
+          fullUrl = '$apiUrl$barcode';
+        }
 
-           final appCode = dotenv.env['ALI_CLOUD_APP_CODE'];
-           if (appCode != null && appCode.isNotEmpty) {
-             headers['Authorization'] = 'APPCODE $appCode';
-           } else {
-             // If AppCode is missing for AliCloud, abort the request to prevent errors
-             // or fallback to manual entry (return null)
-             debugPrint('AliCloud AppCode is missing in .env');
-             return null;
-           }
+        final appCode = dotenv.env['ALI_CLOUD_APP_CODE'];
+        if (appCode != null && appCode.isNotEmpty) {
+          headers['Authorization'] = 'APPCODE $appCode';
+        } else {
+          // If AppCode is missing for AliCloud, abort the request to prevent errors
+          // or fallback to manual entry (return null)
+          debugPrint('AliCloud AppCode is missing in .env');
+          return null;
         }
 
         final extResponse = await http.get(Uri.parse(fullUrl), headers: headers);
