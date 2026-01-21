@@ -20,8 +20,61 @@ class KioskServerService {
 
   Future<void> startServer(String pin) async {
     _pin = pin;
-    final info = NetworkInfo();
-    _ipAddress = await info.getWifiIP();
+    
+    // Iterate interfaces to find a valid non-loopback IPv4 address
+    // Priority: Hotspot (ap0, tethering) -> Wi-Fi (wlan0) -> Exclude LTE (rmnet)
+    try {
+      final interfaces = await NetworkInterface.list(
+        includeLoopback: false, 
+        type: InternetAddressType.IPv4,
+      );
+
+      NetworkInterface? selectedInterface;
+
+      // 1. Prioritize Hotspot/Tethering interface (ap, tether, wlan1 usually)
+      try {
+        selectedInterface = interfaces.firstWhere(
+          (i) => i.name.toLowerCase().contains('ap') || 
+                 i.name.toLowerCase().contains('tether')
+        );
+      } catch (_) {}
+
+      // 2. If no Hotspot, try to find Wi-Fi interface (wlan)
+      if (selectedInterface == null) {
+        try {
+          selectedInterface = interfaces.firstWhere((i) => i.name.toLowerCase().contains('wlan'));
+        } catch (_) {}
+      }
+
+      // 3. If still nothing, look for any interface that IS NOT mobile data (rmnet, ccmni, pdp)
+      if (selectedInterface == null) {
+        try {
+          selectedInterface = interfaces.firstWhere(
+            (i) => !i.name.toLowerCase().contains('rmnet') && 
+                   !i.name.toLowerCase().contains('ccmni') &&
+                   !i.name.toLowerCase().contains('pdp')
+          );
+        } catch (_) {}
+      }
+
+      if (selectedInterface != null) {
+        debugPrint('Selected interface: ${selectedInterface.name}');
+        for (var addr in selectedInterface.addresses) {
+           if (!addr.isLoopback) {
+             _ipAddress = addr.address;
+             break;
+           }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error listing network interfaces: $e');
+    }
+    
+    // Fallback to NetworkInfo if manual lookup fails (though manual is more robust for Hotspot/LTE)
+    if (_ipAddress == null) {
+      final info = NetworkInfo();
+      _ipAddress = await info.getWifiIP();
+    }
     
     if (_ipAddress == null) {
       debugPrint('Could not get IP address. Server not started.');
@@ -59,6 +112,17 @@ class KioskServerService {
         return Response.ok(jsonEncode({'message': 'Synced ${productsJson.length} products'}));
       } catch (e) {
         return Response.internalServerError(body: 'Sync failed: $e');
+      }
+    });
+
+    // Endpoint: Get Products (Pull from Kiosk)
+    router.get('/sync/products', (Request request) async {
+      try {
+        final products = await DatabaseHelper.instance.getAllProducts();
+        final productsJson = jsonEncode(products.map((p) => p.toJson()).toList());
+        return Response.ok(productsJson, headers: {'Content-Type': 'application/json'});
+      } catch (e) {
+        return Response.internalServerError(body: 'Failed to fetch products: $e');
       }
     });
 

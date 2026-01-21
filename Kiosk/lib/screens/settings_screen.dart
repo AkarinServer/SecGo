@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:kiosk/services/server/kiosk_server.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:kiosk/l10n/app_localizations.dart';
+
+import 'package:kiosk/services/settings_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,8 +16,24 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final KioskServerService _serverService = KioskServerService();
   final TextEditingController _pinController = TextEditingController();
+  final SettingsService _settingsService = SettingsService(); // Add SettingsService
   bool _isServerRunning = false;
+  bool _isLoading = false;
   String? _qrData;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill PIN if available
+    final savedPin = _settingsService.getPin();
+    if (savedPin != null) {
+      _pinController.text = savedPin;
+      // Auto-start server if PIN is available
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startServer();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -30,17 +49,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     await _serverService.startServer(_pinController.text);
-    if (_serverService.ipAddress != null) {
+    
+    if (mounted) {
       setState(() {
-        _isServerRunning = true;
-        // QR Data format: {"ip": "192.168.x.x", "port": 8081, "pin": "1234"}
-        // Note: Including PIN in QR for easier pairing, assuming QR is only shown to trusted manager
-        _qrData = jsonEncode({
-          'ip': _serverService.ipAddress,
-          'port': _serverService.port,
-          'pin': _pinController.text,
-        });
+        _isLoading = false;
+        if (_serverService.ipAddress != null) {
+          _isServerRunning = true;
+          // QR Data format: {"ip": "192.168.x.x", "port": 8081, "pin": "1234"}
+          _qrData = jsonEncode({
+            'ip': _serverService.ipAddress,
+            'port': _serverService.port,
+            'pin': _pinController.text,
+          });
+        } else {
+           // Optional: Show error if IP is null (e.g. no wifi)
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to start server: No IP address found')),
+          );
+        }
       });
     }
   }
@@ -52,7 +83,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Center(
-          child: _isServerRunning
+          child: _isLoading 
+            ? const CircularProgressIndicator() 
+            : _isServerRunning
               ? Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -75,35 +108,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 40),
                     ElevatedButton(
                       onPressed: () {
-                        _serverService.stopServer();
-                        setState(() => _isServerRunning = false);
+                        // Restart server logic or close page
+                        Navigator.pop(context);
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                      child: const Text('Stop Server'),
+                      child: const Text('Close'),
                     ),
                   ],
                 )
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                    const SizedBox(height: 20),
                     const Text(
-                      'Setup Kiosk Server',
-                      style: TextStyle(fontSize: 24),
+                      'Failed to Start Server',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: _pinController,
-                      decoration: const InputDecoration(
-                        labelText: 'Set Connection PIN',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      obscureText: true,
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Could not find a valid IP address.\nPlease check your Wi-Fi, Hotspot, or Mobile Data connection.',
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
                     ElevatedButton(
                       onPressed: _startServer,
-                      child: const Text('Start Server & Show QR'),
+                      child: const Text('Retry'),
                     ),
                   ],
                 ),

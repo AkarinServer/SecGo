@@ -54,4 +54,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentSuccess => 'Payment Successful!';
+
+  @override
+  String get setupPin => 'Setup Admin PIN';
+
+  @override
+  String get setAdminPin => 'Set Admin PIN';
+
+  @override
+  String get pinDescription =>
+      'This PIN will be used to access settings and connect to the manager app.';
+
+  @override
+  String get pinRequired => 'PIN is required';
+
+  @override
+  String get pinLength => 'PIN must be at least 4 digits';
+
+  @override
+  String get confirmPin => 'Confirm PIN';
+
+  @override
+  String get pinMismatch => 'PINs do not match';
+
+  @override
+  String get saveAndContinue => 'Save & Continue';
+
+  @override
+  String get storeName => 'SecGo Store';
+
+  @override
+  String get clearCart => 'Clear Cart';
+
+  @override
+  String get inputBarcode => 'Input Barcode';
+
+  @override
+  String get noBarcodeItem => 'No Barcode Item';
+
+  @override
+  String get checkout => 'Checkout';
+
+  @override
+  String get unit => 'Unit: ';
 }

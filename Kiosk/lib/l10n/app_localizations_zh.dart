@@ -54,4 +54,47 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get paymentSuccess => '支付成功!';
+
+  @override
+  String get setupPin => 'Setup Admin PIN';
+
+  @override
+  String get setAdminPin => 'Set Admin PIN';
+
+  @override
+  String get pinDescription =>
+      'This PIN will be used to access settings and connect to the manager app.';
+
+  @override
+  String get pinRequired => 'PIN is required';
+
+  @override
+  String get pinLength => 'PIN must be at least 4 digits';
+
+  @override
+  String get confirmPin => 'Confirm PIN';
+
+  @override
+  String get pinMismatch => 'PINs do not match';
+
+  @override
+  String get saveAndContinue => 'Save & Continue';
+
+  @override
+  String get storeName => 'SecGo 便利店';
+
+  @override
+  String get clearCart => '清空购物车';
+
+  @override
+  String get inputBarcode => '输入商品条码';
+
+  @override
+  String get noBarcodeItem => '无条码商品';
+
+  @override
+  String get checkout => '去结算';
+
+  @override
+  String get unit => '单价: ';
 }

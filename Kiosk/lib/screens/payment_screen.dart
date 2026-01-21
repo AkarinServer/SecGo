@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:kiosk/services/api_service.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:qr_flutter/qr_flutter.dart';
+import 'package:kiosk/l10n/app_localizations.dart';
 
 class PaymentScreen extends StatefulWidget {
   final double totalAmount;
@@ -88,12 +88,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: Colors.black,
+      // backgroundColor: Colors.black, // Use theme
       appBar: AppBar(
         title: Text(l10n.payment),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        // backgroundColor: Colors.black, // Use theme
+        // foregroundColor: Colors.white, // Use theme
       ),
       body: Center(
         child: Column(
@@ -101,10 +103,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
           children: [
             Text(
               'Total: \$${widget.totalAmount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontSize: 32,
+              style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
               ),
             ),
             const SizedBox(height: 40),
@@ -115,7 +115,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 onTap: _handleAdminTap,
                 child: Container(
                   padding: const EdgeInsets.all(20),
-                  color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: Colors.white, // QR codes need white background
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Image.memory(
                     base64Decode(_qrData!),
                     width: 300,
@@ -126,12 +129,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
             else
               Text(
                 l10n.failedQr,
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: theme.colorScheme.error),
               ),
             const SizedBox(height: 40),
             Text(
               l10n.scanQr,
-              style: const TextStyle(color: Colors.grey, fontSize: 18),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),

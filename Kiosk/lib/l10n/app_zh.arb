@@ -13,5 +13,11 @@
   "invalidPin": "无效的PIN码",
   "addedProduct": "已添加 {product}",
   "productNotFound": "未找到商品",
-  "paymentSuccess": "支付成功!"
+  "paymentSuccess": "支付成功!",
+  "storeName": "SecGo 便利店",
+  "clearCart": "清空购物车",
+  "inputBarcode": "输入商品条码",
+  "noBarcodeItem": "无条码商品",
+  "checkout": "去结算",
+  "unit": "单价: "
 }

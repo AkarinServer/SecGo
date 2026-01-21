@@ -13,5 +13,19 @@
   "invalidPin": "Invalid PIN",
   "addedProduct": "Added {product}",
   "productNotFound": "Product not found",
-  "paymentSuccess": "Payment Successful!"
+  "paymentSuccess": "Payment Successful!",
+  "setupPin": "Setup Admin PIN",
+  "setAdminPin": "Set Admin PIN",
+  "pinDescription": "This PIN will be used to access settings and connect to the manager app.",
+  "pinRequired": "PIN is required",
+  "pinLength": "PIN must be at least 4 digits",
+  "confirmPin": "Confirm PIN",
+  "pinMismatch": "PINs do not match",
+  "saveAndContinue": "Save & Continue",
+  "storeName": "SecGo Store",
+  "clearCart": "Clear Cart",
+  "inputBarcode": "Input Barcode",
+  "noBarcodeItem": "No Barcode Item",
+  "checkout": "Checkout",
+  "unit": "Unit: "
 }

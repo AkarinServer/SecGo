@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Add intl for date formatting
 import 'package:kiosk/models/product.dart';
 import 'package:kiosk/screens/payment_screen.dart';
-import 'package:kiosk/screens/settings_screen.dart'; // Import SettingsScreen
+import 'package:kiosk/screens/settings_screen.dart';
 import 'package:kiosk/services/api_service.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:kiosk/l10n/app_localizations.dart';
+
+// Helper class for cart items
+class CartItem {
+  final Product product;
+  int quantity;
+
+  CartItem(this.product, {this.quantity = 1});
+
+  double get total => product.price * quantity;
+}
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,10 +26,49 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final ApiService _apiService = ApiService();
-  final List<Product> _cart = [];
+  final Map<String, CartItem> _cartItems = {}; // Use Map for O(1) lookups
   bool _isProcessing = false;
+  // Initialize with Front Camera
+  final MobileScannerController _scannerController = MobileScannerController(
+    facing: CameraFacing.front,
+  );
 
-  double get _totalAmount => _cart.fold(0, (sum, item) => sum + item.price);
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
+
+  double get _totalAmount => _cartItems.values.fold(0, (sum, item) => sum + item.total);
+  int get _totalItems => _cartItems.values.fold(0, (sum, item) => sum + item.quantity);
+
+  void _addToCart(Product product) {
+    setState(() {
+      if (_cartItems.containsKey(product.barcode)) {
+        _cartItems[product.barcode]!.quantity++;
+      } else {
+        _cartItems[product.barcode] = CartItem(product);
+      }
+    });
+  }
+
+  void _removeFromCart(String barcode) {
+    setState(() {
+      if (_cartItems.containsKey(barcode)) {
+        if (_cartItems[barcode]!.quantity > 1) {
+          _cartItems[barcode]!.quantity--;
+        } else {
+          _cartItems.remove(barcode);
+        }
+      }
+    });
+  }
+
+  void _clearCart() {
+    setState(() {
+      _cartItems.clear();
+    });
+  }
 
   Future<void> _handleBarcodeDetect(BarcodeCapture capture) async {
     if (_isProcessing) return;
@@ -27,17 +77,17 @@ class _MainScreenState extends State<MainScreen> {
     if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
       final String code = barcodes.first.rawValue!;
 
-      // Debounce logic could be added here
       setState(() => _isProcessing = true);
 
       final product = await _apiService.getProduct(code);
       if (product != null) {
-        setState(() {
-          _cart.add(product);
-        });
+        _addToCart(product);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.addedProduct(product.name))),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.addedProduct(product.name)),
+              duration: const Duration(milliseconds: 1000),
+            ),
           );
         }
       } else {
@@ -48,8 +98,7 @@ class _MainScreenState extends State<MainScreen> {
         }
       }
 
-      // Small delay to prevent double scanning
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 1)); // Faster scan interval
       if (mounted) {
         setState(() => _isProcessing = false);
       }
@@ -63,10 +112,8 @@ class _MainScreenState extends State<MainScreen> {
         builder: (_) => PaymentScreen(
           totalAmount: _totalAmount,
           onPaymentConfirmed: () {
-            setState(() {
-              _cart.clear();
-            });
-            Navigator.pop(context); // Close payment screen
+            _clearCart();
+            Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(AppLocalizations.of(context)!.paymentSuccess)),
             );
@@ -79,107 +126,272 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    
+    // Formatting currency
+    final currencyFormat = NumberFormat.currency(symbol: '¥'); // Or '$' based on locale
+
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Row(
+      body: Stack(
         children: [
-          // Left side: Scanner
-          Expanded(
-            flex: 2,
-            child: MobileScanner(
-              onDetect: _handleBarcodeDetect,
-              fit: BoxFit.cover,
-            ),
-          ),
-          // Right side: Cart
-          Expanded(
-            flex: 1,
-            child: Container(
-              color: Colors.grey[900],
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n.cart,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const Divider(color: Colors.grey),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: _cart.length,
-                      itemBuilder: (context, index) {
-                        final item = _cart[index];
-                        return ListTile(
-                          title: Text(
-                            item.name,
+          // Layer 1: Main UI
+          Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                color: Colors.red, // Brand color from image
+                child: SafeArea(
+                  bottom: false,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            "惠友", // Logo/Brand placeholder
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            l10n.storeName,
+                            style: const TextStyle(color: Colors.white, fontSize: 18),
+                          ),
+                          const SizedBox(width: 20),
+                          Text(
+                            "ID: 0000", // Placeholder ID
+                            style: TextStyle(color: Colors.white.withOpacity(0.8)),
+                          ),
+                          const SizedBox(width: 20),
+                          Text(
+                            DateFormat('HH:mm').format(DateTime.now()),
                             style: const TextStyle(color: Colors.white),
                           ),
-                          trailing: Text(
-                            '\$${item.price.toStringAsFixed(2)}',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const Divider(color: Colors.grey),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          l10n.total,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: _clearCart,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          shape: const StadiumBorder(side: BorderSide(color: Colors.white)),
                         ),
-                        Text(
-                          '\$${_totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.greenAccent,
-                          ),
+                        child: Text(l10n.clearCart),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Body: Cart List
+              Expanded(
+                child: _cartItems.isEmpty
+                    ? Center(
+                        child: Text(
+                          "Your cart is empty",
+                          style: theme.textTheme.headlineSmall?.copyWith(color: Colors.grey),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _cartItems.length,
+                        separatorBuilder: (_, __) => const Divider(),
+                        itemBuilder: (context, index) {
+                          final item = _cartItems.values.elementAt(index);
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.product.name,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "${l10n.unit}${currencyFormat.format(item.product.price)}",
+                                        style: TextStyle(color: Colors.grey[600]),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Quantity Controls
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey[300]!),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.remove, size: 16),
+                                        onPressed: () => _removeFromCart(item.product.barcode),
+                                      ),
+                                      Text(
+                                        "${item.quantity}",
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.add, size: 16),
+                                        onPressed: () => _addToCart(item.product),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                SizedBox(
+                                  width: 100,
+                                  child: Text(
+                                    currencyFormat.format(item.total),
+                                    textAlign: TextAlign.right,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              
+              // Footer
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Left Actions
+                    Row(
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                             // Manual barcode entry dialog
+                             // Placeholder
+                          },
+                          icon: const Icon(Icons.keyboard, color: Colors.grey),
+                          label: Text(l10n.inputBarcode, style: const TextStyle(color: Colors.grey)),
+                        ),
+                        const SizedBox(width: 16),
+                        TextButton.icon(
+                          onPressed: () {
+                            // No barcode selection
+                            // Placeholder
+                          },
+                          icon: const Icon(Icons.grid_view, color: Colors.grey),
+                          label: Text(l10n.noBarcodeItem, style: const TextStyle(color: Colors.grey)),
+                        ),
+                        const SizedBox(width: 16),
+                         // Settings Button (Hidden access)
+                        IconButton(
+                          icon: const Icon(Icons.settings, color: Colors.grey),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                            );
+                          },
                         ),
                       ],
                     ),
-                  ),
-                  SizedBox(
-                    height: 60,
-                    child: ElevatedButton(
-                      onPressed: _cart.isEmpty ? null : _processPayment,
+                    const Spacer(),
+                    // Right Actions
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Total: ${currencyFormat.format(_totalAmount)}",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "$_totalItems items",
+                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 20),
+                    ElevatedButton(
+                      onPressed: _cartItems.isEmpty ? null : _processPayment,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       ),
                       child: Text(
-                        l10n.payNow,
+                        l10n.checkout,
                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  IconButton(
-                    icon: const Icon(Icons.settings, color: Colors.grey),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                      );
-                    },
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          // Layer 2: Camera Overlay (Suspension at bottom-left)
+          Positioned(
+            left: 20,
+            bottom: 100, // Above the footer
+            child: Container(
+              width: 200,
+              height: 150,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 10,
                   ),
                 ],
               ),
-            ),
-          ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: MobileScanner(
+                  controller: _scannerController,
+                  onDetect: _handleBarcodeDetect,
+                ),
+              ),
             ),
           ),
         ],

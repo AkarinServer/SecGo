@@ -187,6 +187,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment Successful!'**
   String get paymentSuccess;
+
+  /// No description provided for @setupPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup Admin PIN'**
+  String get setupPin;
+
+  /// No description provided for @setAdminPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Admin PIN'**
+  String get setAdminPin;
+
+  /// No description provided for @pinDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This PIN will be used to access settings and connect to the manager app.'**
+  String get pinDescription;
+
+  /// No description provided for @pinRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN is required'**
+  String get pinRequired;
+
+  /// No description provided for @pinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN must be at least 4 digits'**
+  String get pinLength;
+
+  /// No description provided for @confirmPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get confirmPin;
+
+  /// No description provided for @pinMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'PINs do not match'**
+  String get pinMismatch;
+
+  /// No description provided for @saveAndContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Save & Continue'**
+  String get saveAndContinue;
+
+  /// No description provided for @storeName.
+  ///
+  /// In en, this message translates to:
+  /// **'SecGo Store'**
+  String get storeName;
+
+  /// No description provided for @clearCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Cart'**
+  String get clearCart;
+
+  /// No description provided for @inputBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Input Barcode'**
+  String get inputBarcode;
+
+  /// No description provided for @noBarcodeItem.
+  ///
+  /// In en, this message translates to:
+  /// **'No Barcode Item'**
+  String get noBarcodeItem;
+
+  /// No description provided for @checkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout'**
+  String get checkout;
+
+  /// No description provided for @unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit: '**
+  String get unit;
 }
 
 class _AppLocalizationsDelegate
