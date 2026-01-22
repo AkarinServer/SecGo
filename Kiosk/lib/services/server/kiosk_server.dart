@@ -170,6 +170,8 @@ class KioskServerService {
     // Endpoint: Get Backup (Download DB)
     router.get('/backup', (Request request) async {
       try {
+        final db = await DatabaseHelper.instance.database;
+        await db.execute('PRAGMA wal_checkpoint(TRUNCATE)');
         final dbPath = await getDatabasesPath();
         final path = join(dbPath, 'kiosk.db');
         final file = File(path);
