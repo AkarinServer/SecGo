@@ -84,39 +84,60 @@ class _MainScreenState extends State<MainScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
   final Map<String, CartItem> _cartItems = {}; // Use Map for O(1) lookups
   bool _isProcessing = false;
+  bool _scannerVisible = true;
   final RestoreNotifier _restoreNotifier = RestoreNotifier.instance;
   
   // Use the front camera as requested.
-  final MobileScannerController _scannerController = MobileScannerController(
-    facing: CameraFacing.front,
-    cameraResolution: const Size(1280, 720),
-    autoZoom: true,
-    formats: const [
-      BarcodeFormat.ean13,
-      BarcodeFormat.ean8,
-      BarcodeFormat.upcA,
-      BarcodeFormat.upcE,
-      BarcodeFormat.code128,
-      BarcodeFormat.code39,
-      BarcodeFormat.code93,
-      BarcodeFormat.itf,
-      BarcodeFormat.codabar,
-      BarcodeFormat.qrCode,
-    ],
-    detectionSpeed: DetectionSpeed.normal,
-    detectionTimeoutMs: 250,
-    returnImage: false, // Improves performance on older devices
-  );
+  MobileScannerController? _scannerController;
+
+  MobileScannerController _createScannerController() {
+    return MobileScannerController(
+      facing: CameraFacing.front,
+      cameraResolution: const Size(1280, 720),
+      autoZoom: true,
+      formats: const [
+        BarcodeFormat.ean13,
+        BarcodeFormat.ean8,
+        BarcodeFormat.upcA,
+        BarcodeFormat.upcE,
+        BarcodeFormat.code128,
+        BarcodeFormat.code39,
+        BarcodeFormat.code93,
+        BarcodeFormat.itf,
+        BarcodeFormat.codabar,
+        BarcodeFormat.qrCode,
+      ],
+      detectionSpeed: DetectionSpeed.normal,
+      detectionTimeoutMs: 250,
+      returnImage: false,
+    );
+  }
+
+  void _startScannerSafely() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final controller = _scannerController;
+      if (controller == null) return;
+      try {
+        await controller.start();
+      } catch (e) {
+        debugPrint('Failed to start scanner: $e');
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     _restoreNotifier.addListener(_handleRestore);
+    _scannerController = _createScannerController();
+    _startScannerSafely();
   }
 
   @override
   void dispose() {
-    _scannerController.dispose();
+    _scannerController?.dispose();
+    _scannerController = null;
     _restoreNotifier.removeListener(_handleRestore);
     super.dispose();
   }
@@ -222,7 +243,9 @@ class _MainScreenState extends State<MainScreen> {
         );
       }
       
-      final BarcodeCapture? capture = await _scannerController.analyzeImage(filePath);
+      final controller = _scannerController;
+      if (controller == null) return;
+      final BarcodeCapture? capture = await controller.analyzeImage(filePath);
       
       if (capture != null && capture.barcodes.isNotEmpty) {
         await _handleBarcodeDetect(capture);
@@ -273,6 +296,17 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     if (!mounted) return;
+    final controller = _scannerController;
+    try {
+      await controller?.stop();
+    } catch (e) {
+      debugPrint('Failed to stop scanner: $e');
+    }
+    controller?.dispose();
+    setState(() {
+      _scannerVisible = false;
+      _scannerController = null;
+    });
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -291,7 +325,14 @@ class _MainScreenState extends State<MainScreen> {
           },
         ),
       ),
-    );
+    ).whenComplete(() async {
+      if (!mounted) return;
+      setState(() {
+        _scannerVisible = true;
+        _scannerController = _createScannerController();
+      });
+      _startScannerSafely();
+    });
   }
 
   @override
@@ -560,40 +601,41 @@ class _MainScreenState extends State<MainScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: MobileScanner(
-                  controller: _scannerController,
-                  onDetect: _handleBarcodeDetect,
-                  onDetectError: _handleBarcodeError,
-                  tapToFocus: true,
-                  fit: BoxFit.cover,
-                  overlayBuilder: (context, constraints) {
-                    return ValueListenableBuilder(
-                      valueListenable: _scannerController,
-                      builder: (context, value, child) {
-                        // In MobileScanner 7.x, value is MobileScannerState
-                        // We need to check if we have a valid capture in the stream or state?
-                        // Wait, MobileScannerState does NOT have 'capture'. 
-                        // We must listen to the 'barcodes' stream for the overlay data.
-                        return StreamBuilder<BarcodeCapture>(
-                          stream: _scannerController.barcodes,
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData || snapshot.data == null) {
-                               return const SizedBox();
-                            }
-                            return IgnorePointer(
-                              child: CustomPaint(
-                                painter: BarcodeOverlayPainter(
-                                  capture: snapshot.data!,
-                                  widgetSize: Size(constraints.maxWidth, constraints.maxHeight),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                ),
+                child: _scannerVisible && _scannerController != null
+                    ? MobileScanner(
+                        controller: _scannerController!,
+                        onDetect: _handleBarcodeDetect,
+                        onDetectError: _handleBarcodeError,
+                        tapToFocus: true,
+                        fit: BoxFit.cover,
+                        overlayBuilder: (context, constraints) {
+                          return ValueListenableBuilder(
+                            valueListenable: _scannerController!,
+                            builder: (context, value, child) {
+                              return StreamBuilder<BarcodeCapture>(
+                                stream: _scannerController!.barcodes,
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData || snapshot.data == null) {
+                                    return const SizedBox();
+                                  }
+                                  return IgnorePointer(
+                                    child: CustomPaint(
+                                      painter: BarcodeOverlayPainter(
+                                        capture: snapshot.data!,
+                                        widgetSize: Size(
+                                          constraints.maxWidth,
+                                          constraints.maxHeight,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      )
+                    : const ColoredBox(color: Colors.black),
               ),
             ),
           ),

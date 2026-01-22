@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kiosk/services/settings_service.dart';
 // import 'package:qr_flutter/qr_flutter.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
+import 'package:kiosk/services/audio_payment_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   final double totalAmount;
@@ -21,6 +23,10 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   final SettingsService _settingsService = SettingsService();
+  final AudioPaymentService _audioService = AudioPaymentService();
+  StreamSubscription<double>? _paymentSubscription;
+  StreamSubscription<String>? _logSubscription;
+  String _debugLog = '';
   String? _qrData;
   bool _isLoading = true;
   int _adminTapCount = 0;
@@ -29,6 +35,40 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void initState() {
     super.initState();
     _loadQrCode();
+    _initAudioPayment();
+  }
+
+  Future<void> _initAudioPayment() async {
+    _logSubscription?.cancel();
+    _logSubscription = _audioService.logStream.listen((line) {
+      if (!mounted) return;
+      setState(() {
+        _debugLog = '$line\n$_debugLog';
+        final lines = _debugLog.split('\n');
+        if (lines.length > 12) {
+          _debugLog = lines.take(12).join('\n');
+        }
+      });
+    });
+
+    await _audioService.init();
+    if (!mounted) return;
+    await _audioService.startListening();
+
+    _paymentSubscription?.cancel();
+    _paymentSubscription = _audioService.amountStream.listen((amount) {
+      if (!mounted) return;
+      final total = widget.totalAmount;
+      final diff = (amount - total).abs();
+      final strict = diff < 0.01;
+      final hasCents = ((total * 100).round() % 100) != 0;
+      final vague =
+          !hasCents && (amount.roundToDouble() == total.roundToDouble()) && diff < 0.6;
+
+      if (strict || vague) {
+        _handlePaymentSuccess(amount);
+      }
+    });
   }
 
   Future<void> _loadQrCode() async {
@@ -47,6 +87,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
       _adminTapCount = 0;
       _showAdminPinDialog();
     }
+  }
+
+  void _handlePaymentSuccess(double amount) {
+    _paymentSubscription?.cancel();
+    _audioService.stopListening();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Payment Verified: ¥$amount'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    widget.onPaymentConfirmed();
   }
 
   Future<void> _showAdminPinDialog() async {
@@ -84,6 +139,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _paymentSubscription?.cancel();
+    _logSubscription?.cancel();
+    _audioService.dispose();
+    super.dispose();
   }
 
   @override
@@ -138,6 +201,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
               l10n.scanQr,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: 360,
+              height: 140,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  _debugLog,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                  ),
+                ),
               ),
             ),
           ],
