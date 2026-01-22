@@ -36,6 +36,8 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
 
   Future<void> _pairWithKiosk(String ip, int port, String pin) async {
     final l10n = AppLocalizations.of(context)!;
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     setState(() {
       _isSyncing = true;
       _statusMessage = l10n.pairingKiosk(ip);
@@ -44,29 +46,29 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
     final fetchedDeviceId = await _kioskService.fetchDeviceId(ip, port, pin);
     final success = fetchedDeviceId != null;
 
-    if (mounted) {
-      if (success) {
-        // Keep _isSyncing true to prevent further scans
-        
-        // Save Kiosk to DB
-        await DatabaseHelper.instance.insertKiosk(Kiosk(
-          ip: ip,
-          port: port,
-          pin: pin,
-          lastSynced: DateTime.now().millisecondsSinceEpoch,
-          deviceId: fetchedDeviceId,
-        ));
+    if (!mounted) return;
+    if (success) {
+      // Keep _isSyncing true to prevent further scans
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.pairSuccess)),
-        );
-        Navigator.pop(context);
-      } else {
-        setState(() {
-          _isSyncing = false;
-          _statusMessage = l10n.pairFailed;
-        });
-      }
+      // Save Kiosk to DB
+      await DatabaseHelper.instance.insertKiosk(Kiosk(
+        ip: ip,
+        port: port,
+        pin: pin,
+        lastSynced: DateTime.now().millisecondsSinceEpoch,
+        deviceId: fetchedDeviceId,
+      ));
+      if (!mounted) return;
+
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.pairSuccess)),
+      );
+      navigator.pop();
+    } else {
+      setState(() {
+        _isSyncing = false;
+        _statusMessage = l10n.pairFailed;
+      });
     }
   }
 

@@ -26,7 +26,7 @@ void main() {
     try {
       await dotenv.load(fileName: ".env");
     } catch (e) {
-      print('Warning: .env not loaded: $e');
+      debugPrint('Warning: .env not loaded: $e');
     }
 
     mockConnectionService = MockKioskConnectionService();

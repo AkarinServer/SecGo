@@ -56,9 +56,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     Product? product = await DatabaseHelper.instance.getProduct(barcode);
     
     // 2. If not found, try External API (AliCloud)
-    if (product == null) {
-      product = await _apiService.getProduct(barcode);
-    }
+    product ??= await _apiService.getProduct(barcode);
 
     if (product != null) {
       _nameController.text = product.name;

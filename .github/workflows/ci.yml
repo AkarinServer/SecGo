@@ -28,6 +28,11 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Prepare env files
+        run: |
+          cp Kiosk/.env_template Kiosk/.env
+          cp Manager/.env_template Manager/.env
+
       - name: Kiosk deps
         working-directory: Kiosk
         run: flutter pub get

@@ -18,7 +18,6 @@ class KioskDrawer extends StatefulWidget {
 
 class _KioskDrawerState extends State<KioskDrawer> {
   final KioskConnectionService _connectionService = KioskConnectionService();
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -42,7 +41,6 @@ class _KioskDrawerState extends State<KioskDrawer> {
 
 
   Future<void> _openBackupRestore(Kiosk kiosk) async {
-    if (_isLoading) return;
     _showBackupOptions(kiosk);
   }
 
@@ -180,15 +178,18 @@ class _KioskDrawerState extends State<KioskDrawer> {
                title: Text(l10n.runDiagnostics),
                onTap: () async {
                  final testService = TestService();
-                 ScaffoldMessenger.of(context).showSnackBar(
+                 final messenger = ScaffoldMessenger.of(context);
+                 messenger.showSnackBar(
                    SnackBar(content: Text(l10n.runningSyncTest)),
                  );
                  await testService.runSyncTest();
-                 ScaffoldMessenger.of(context).showSnackBar(
+                 if (!mounted) return;
+                 messenger.showSnackBar(
                    SnackBar(content: Text(l10n.runningBackupTest)),
                  );
                  await testService.runBackupTest();
-                 ScaffoldMessenger.of(context).showSnackBar(
+                 if (!mounted) return;
+                 messenger.showSnackBar(
                    SnackBar(content: Text(l10n.testsCompleteCheckLogs)),
                  );
                },

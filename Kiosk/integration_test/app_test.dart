@@ -42,11 +42,9 @@ void main() {
     if (hasPinSetup) {
       final l10n = AppLocalizations.of(tester.element(pinSetupFinder))!;
       expect(find.text(l10n.setAdminPin), findsWidgets);
-      print('Verified: PinSetupScreen is shown');
     } else {
       final l10n = AppLocalizations.of(tester.element(mainScreenFinder))!;
       expect(find.text(l10n.checkout), findsOneWidget);
-      print('Verified: MainScreen is shown');
     }
   });
 
@@ -95,7 +93,6 @@ void main() {
 
     // If still on PinSetupScreen, we need to skip this test
     if (find.byType(PinSetupScreen).evaluate().isNotEmpty) {
-      print('Skipping MainScreen test - PinSetupScreen is shown');
       return;
     }
 

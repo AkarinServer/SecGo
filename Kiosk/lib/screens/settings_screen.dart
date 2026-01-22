@@ -171,7 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (_showRestoreComplete)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.65),
+                color: Colors.black.withValues(alpha: 0.65),
                 child: Center(
                   child: AnimatedScale(
                     scale: _showRestoreComplete ? 1 : 0.9,

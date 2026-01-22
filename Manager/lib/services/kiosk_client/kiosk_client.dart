@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:manager/models/product.dart';
@@ -68,7 +69,7 @@ class KioskClientService {
       final remoteProducts = await _fetchProductsFromKiosk(ip, port, pin);
 
       if (remoteProducts == null) {
-        print('Failed to fetch remote products, aborting sync');
+        debugPrint('Failed to fetch remote products, aborting sync');
         return false;
       }
 
@@ -115,7 +116,7 @@ class KioskClientService {
       return pushSuccess;
 
     } catch (e) {
-      print('Bidirectional Sync failed: $e');
+      debugPrint('Bidirectional Sync failed: $e');
       return false;
     }
   }
@@ -135,7 +136,7 @@ class KioskClientService {
         return data.map((json) => Product.fromJson(json)).toList();
       }
     } catch (e) {
-      print('Error fetching products from kiosk: $e');
+      debugPrint('Error fetching products from kiosk: $e');
     }
     return null;
   }
@@ -167,7 +168,7 @@ class KioskClientService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('Error uploading QR to kiosk: $e');
+      debugPrint('Error uploading QR to kiosk: $e');
       return false;
     }
   }
@@ -186,7 +187,7 @@ class KioskClientService {
         return data.map((json) => Order.fromJson(json)).toList();
       }
     } catch (e) {
-      print('Error fetching orders from kiosk: $e');
+      debugPrint('Error fetching orders from kiosk: $e');
     }
     return null;
   }
@@ -206,7 +207,7 @@ class KioskClientService {
         return true;
       }
     } catch (e) {
-      print('Error downloading backup: $e');
+      debugPrint('Error downloading backup: $e');
     }
     return false;
   }
@@ -225,7 +226,7 @@ class KioskClientService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Error restoring backup: $e');
+      debugPrint('Error restoring backup: $e');
       return false;
     }
   }

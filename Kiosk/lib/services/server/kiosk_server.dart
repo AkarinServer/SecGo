@@ -19,7 +19,7 @@ class KioskServerService {
   HttpServer? _server;
   String? _pin;
   String? _ipAddress;
-  int _port = 8081;
+  final int _port = 8081;
   String? _deviceId;
   final SettingsService _settingsService = SettingsService();
   final VoidCallback? onRestoreComplete;
@@ -94,7 +94,7 @@ class KioskServerService {
     final router = Router();
 
     // Middleware to verify PIN
-    Handler _checkAuth(Handler innerHandler) {
+    Handler checkAuth(Handler innerHandler) {
       return (Request request) {
         final authHeader = request.headers['Authorization'];
         if (authHeader != 'Bearer $_pin') {
@@ -221,7 +221,7 @@ class KioskServerService {
 
     final handler = Pipeline()
         .addMiddleware(logRequests())
-        .addMiddleware(_checkAuth)
+        .addMiddleware(checkAuth)
         .addHandler(router.call);
 
     _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, _port);
