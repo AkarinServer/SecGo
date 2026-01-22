@@ -36,6 +36,7 @@
   "noBackupsFound": "No backups found",
   "backupCreated": "Backup created successfully",
   "backupCreateFailed": "Failed to create backup",
+  "backupCreateFailedWithReason": "Backup failed: {reason}",
   "confirmRestore": "Confirm Restore",
   "restoreOverwriteWarning": "This will overwrite the products on the Kiosk with this backup. Orders will be preserved. Continue?",
   "restore": "Restore",
