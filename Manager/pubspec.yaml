@@ -1,7 +1,7 @@
 name: manager
 description: "Vending Machine Manager App"
 publish_to: 'none'
-version: 0.3.0+1
+version: 0.3.0+3
 
 environment:
   sdk: ^3.9.2
