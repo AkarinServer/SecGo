@@ -66,7 +66,7 @@ void main() {
       final service = KioskClientService(client: mockClient);
       final result = await service.downloadBackup(ip, port, pin, tempFile.path);
 
-      expect(result, true);
+      expect(result.success, true);
       expect(tempFile.existsSync(), true);
       expect(await tempFile.readAsBytes(), [1, 2, 3, 4]);
 

@@ -126,6 +126,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupCreateFailed => '备份创建失败';
 
   @override
+  String backupCreateFailedWithReason(Object reason) {
+    return '备份失败：$reason';
+  }
+
+  @override
   String get confirmRestore => '确认恢复';
 
   @override

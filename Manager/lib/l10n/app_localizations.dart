@@ -320,6 +320,12 @@ abstract class AppLocalizations {
   /// **'Failed to create backup'**
   String get backupCreateFailed;
 
+  /// No description provided for @backupCreateFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup failed: {reason}'**
+  String backupCreateFailedWithReason(Object reason);
+
   /// No description provided for @confirmRestore.
   ///
   /// In en, this message translates to:

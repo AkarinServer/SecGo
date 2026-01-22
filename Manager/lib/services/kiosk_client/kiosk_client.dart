@@ -192,7 +192,7 @@ class KioskClientService {
     return null;
   }
 
-  Future<bool> downloadBackup(String ip, int port, String pin, String savePath) async {
+  Future<BackupResult> downloadBackup(String ip, int port, String pin, String savePath) async {
     try {
       final response = await _client.get(
         Uri.parse('http://$ip:$port/backup'),
@@ -204,12 +204,17 @@ class KioskClientService {
       if (response.statusCode == 200) {
         final file = File(savePath);
         await file.writeAsBytes(response.bodyBytes);
-        return true;
+        return const BackupResult.success();
       }
+      final body = response.body.isNotEmpty
+          ? response.body
+          : 'HTTP ${response.statusCode}';
+      debugPrint('Backup download failed: ${response.statusCode} $body');
+      return BackupResult.failure(body);
     } catch (e) {
       debugPrint('Error downloading backup: $e');
+      return BackupResult.failure(e.toString());
     }
-    return false;
   }
 
   Future<bool> restoreBackup(String ip, int port, String pin, File dbFile) async {
@@ -230,4 +235,15 @@ class KioskClientService {
       return false;
     }
   }
+}
+
+class BackupResult {
+  final bool success;
+  final String? message;
+
+  const BackupResult._(this.success, [this.message]);
+
+  const BackupResult.success([String? message]) : this._(true, message);
+
+  const BackupResult.failure(String message) : this._(false, message);
 }

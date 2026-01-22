@@ -57,14 +57,14 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final filePath = path.join(backupDir.path, 'backup_$timestamp.db');
 
-      final success = await _kioskService.downloadBackup(
+      final result = await _kioskService.downloadBackup(
         widget.kiosk.ip, 
         widget.kiosk.port, 
         widget.kiosk.pin, 
         filePath
       );
 
-      if (success) {
+      if (result.success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.backupCreated)),
@@ -74,7 +74,11 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.backupCreateFailed)),
+            SnackBar(
+              content: Text(
+                l10n.backupCreateFailedWithReason(result.message ?? l10n.backupCreateFailed),
+              ),
+            ),
           );
         }
       }

@@ -126,6 +126,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupCreateFailed => 'Failed to create backup';
 
   @override
+  String backupCreateFailedWithReason(Object reason) {
+    return 'Backup failed: $reason';
+  }
+
+  @override
   String get confirmRestore => 'Confirm Restore';
 
   @override
