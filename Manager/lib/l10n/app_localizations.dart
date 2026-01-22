@@ -320,6 +320,12 @@ abstract class AppLocalizations {
   /// **'Failed to create backup'**
   String get backupCreateFailed;
 
+  /// No description provided for @backupCreateFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup failed: {reason}'**
+  String backupCreateFailedWithReason(Object reason);
+
   /// No description provided for @confirmRestore.
   ///
   /// In en, this message translates to:
@@ -481,6 +487,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scan the QR code on the Kiosk Settings screen'**
   String get scanKioskHint;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @deleteProductTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Product'**
+  String get deleteProductTitle;
+
+  /// No description provided for @deleteProductMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String deleteProductMessage(Object name);
+
+  /// No description provided for @deleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product deleted'**
+  String get deleteSuccess;
+
+  /// No description provided for @deleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete product'**
+  String get deleteFailed;
+
+  /// No description provided for @deleteSyncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Product deleted, but sync to kiosk failed.'**
+  String get deleteSyncFailed;
+
+  /// No description provided for @connectKioskToUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to a kiosk to upload the QR code.'**
+  String get connectKioskToUpload;
+
+  /// No description provided for @restoreFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed: {reason}'**
+  String restoreFailedWithReason(Object reason);
+
+  /// No description provided for @enterPinPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN to pair'**
+  String get enterPinPrompt;
+
+  /// No description provided for @enterPinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN'**
+  String get enterPinTitle;
+
+  /// No description provided for @enterPinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk PIN'**
+  String get enterPinHint;
+
+  /// No description provided for @pinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN must be at least 4 digits'**
+  String get pinLength;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
 }
 
 class _AppLocalizationsDelegate

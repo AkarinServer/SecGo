@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:manager/db/database_helper.dart';
 import 'package:manager/services/kiosk_client/kiosk_client.dart';
 import 'package:manager/l10n/app_localizations.dart';
+import 'package:manager/services/kiosk_connection_service.dart';
 
 class QrUploadScreen extends StatefulWidget {
   const QrUploadScreen({super.key});
@@ -15,9 +15,26 @@ class QrUploadScreen extends StatefulWidget {
 
 class _QrUploadScreenState extends State<QrUploadScreen> {
   final KioskClientService _kioskService = KioskClientService();
+  final KioskConnectionService _connectionService = KioskConnectionService();
   final ImagePicker _picker = ImagePicker();
   File? _image;
   bool _isUploading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _connectionService.addListener(_onConnectionChange);
+  }
+
+  @override
+  void dispose() {
+    _connectionService.removeListener(_onConnectionChange);
+    super.dispose();
+  }
+
+  void _onConnectionChange() {
+    if (mounted) setState(() {});
+  }
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -30,42 +47,33 @@ class _QrUploadScreenState extends State<QrUploadScreen> {
 
   Future<void> _uploadImage() async {
     if (_image == null) return;
+    final connectedKiosk = _connectionService.connectedKiosk;
+    if (connectedKiosk == null) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.kioskNotConnected)),
+      );
+      return;
+    }
 
     setState(() => _isUploading = true);
     try {
       final bytes = await _image!.readAsBytes();
       final base64Image = base64Encode(bytes);
-
-      final kiosks = await DatabaseHelper.instance.getAllKiosks();
-      if (kiosks.isEmpty) {
-        if (mounted) {
-          final l10n = AppLocalizations.of(context)!;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.noKiosksPaired)),
-          );
-        }
-        setState(() => _isUploading = false);
-        return;
-      }
-
-      int successCount = 0;
-      for (final kiosk in kiosks) {
-        final success = await _kioskService.uploadPaymentQr(
-          kiosk.ip, 
-          kiosk.port, 
-          kiosk.pin, 
-          base64Image
-        );
-        if (success) successCount++;
-      }
+      final success = await _kioskService.uploadPaymentQr(
+        connectedKiosk.ip,
+        connectedKiosk.port,
+        connectedKiosk.pin,
+        base64Image,
+      );
 
       setState(() => _isUploading = false);
 
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
-        if (successCount > 0) {
+        if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.uploadedToKiosks(successCount))),
+            SnackBar(content: Text(l10n.uploadedToKiosks(1))),
           );
           Navigator.pop(context);
         } else {
@@ -88,19 +96,29 @@ class _QrUploadScreenState extends State<QrUploadScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isConnected = _connectionService.hasConnectedKiosk;
+    final canUpload = isConnected && _image != null && !_isUploading;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.uploadQr)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (!isConnected)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  l10n.connectKioskToUpload,
+                  textAlign: TextAlign.center,
+                ),
+              ),
             if (_image != null)
               Image.file(_image!, height: 300)
             else
               const Icon(Icons.qr_code, size: 100, color: Colors.grey),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: _pickImage,
+              onPressed: isConnected ? _pickImage : null,
               icon: const Icon(Icons.image),
               label: Text(l10n.selectImage),
             ),
@@ -109,7 +127,7 @@ class _QrUploadScreenState extends State<QrUploadScreen> {
               const CircularProgressIndicator()
             else
               ElevatedButton(
-                onPressed: _image != null ? _uploadImage : null,
+                onPressed: canUpload ? _uploadImage : null,
                 child: Text(l10n.uploadToServer),
               ),
           ],

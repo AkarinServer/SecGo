@@ -78,6 +78,26 @@ cp Manager/.env_template Manager/.env
 
 ---
 
+## 🔢 Versioning Rule (Main Merge)
+
+Every merge into `main` **must** bump the app "major" version by **+1**.
+
+For this repo, while versions are still in `0.x.y`, we treat the **`x`** as the
+major version. That means **`0.x → 0.(x+1)`** on every merge.
+
+Update both of these files before merging:
+
+- `Kiosk/pubspec.yaml`
+- `Manager/pubspec.yaml`
+
+Example:
+
+```
+0.1.3+4 → 0.2.0+1
+```
+
+---
+
 ## 🧾 Commit Style
 
 Keep commits small and meaningful. Suggested format:

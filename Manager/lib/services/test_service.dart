@@ -61,10 +61,15 @@ class TestService {
       
       // 1. Download Backup
       debugPrint('TEST_INFO: Downloading backup to $filePath');
-      final downloadSuccess = await _kioskService.downloadBackup(kiosk.ip, kiosk.port, kiosk.pin, filePath);
+      final downloadResult = await _kioskService.downloadBackup(
+        kiosk.ip,
+        kiosk.port,
+        kiosk.pin,
+        filePath,
+      );
       
-      if (!downloadSuccess) {
-        debugPrint('BACKUP_TEST: FAILED - Download failed');
+      if (!downloadResult.success) {
+        debugPrint('BACKUP_TEST: FAILED - ${downloadResult.message}');
         return;
       }
       
@@ -77,12 +82,17 @@ class TestService {
 
       // 2. Restore Backup
       debugPrint('TEST_INFO: Restoring backup');
-      final restoreSuccess = await _kioskService.restoreBackup(kiosk.ip, kiosk.port, kiosk.pin, File(filePath));
+      final restoreResult = await _kioskService.restoreBackup(
+        kiosk.ip,
+        kiosk.port,
+        kiosk.pin,
+        File(filePath),
+      );
 
-      if (restoreSuccess) {
+      if (restoreResult.success) {
         debugPrint('RESTORE_TEST: PASSED');
       } else {
-        debugPrint('RESTORE_TEST: FAILED - Restore call returned false');
+        debugPrint('RESTORE_TEST: FAILED - ${restoreResult.message}');
       }
 
     } catch (e) {

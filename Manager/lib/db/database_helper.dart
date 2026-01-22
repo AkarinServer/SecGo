@@ -111,6 +111,15 @@ class DatabaseHelper {
     return maps.map((json) => Product.fromJson(json)).toList();
   }
 
+  Future<int> deleteProduct(String barcode) async {
+    final db = await instance.database;
+    return await db.delete(
+      'products',
+      where: 'barcode = ?',
+      whereArgs: [barcode],
+    );
+  }
+
   // Kiosk Methods
   Future<int> insertKiosk(Kiosk kiosk) async {
     final db = await instance.database;

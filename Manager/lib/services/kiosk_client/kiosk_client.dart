@@ -57,10 +57,11 @@ class KioskClientService {
     String ip,
     int port,
     String pin,
-    List<Product> products,
-  ) async {
-    if (products.isEmpty) return true;
-    return _pushProductsToKiosk(ip, port, pin, products);
+    List<Product> products, {
+    bool replace = false,
+  }) async {
+    if (products.isEmpty && !replace) return true;
+    return _pushProductsToKiosk(ip, port, pin, products, replace: replace);
   }
 
   Future<bool> bidirectionalSync(String ip, int port, String pin) async {
@@ -141,19 +142,26 @@ class KioskClientService {
     return null;
   }
 
-  Future<bool> _pushProductsToKiosk(String ip, int port, String pin, List<Product> products) async {
-      final productsJson = jsonEncode(products.map((p) => p.toJson()).toList());
+  Future<bool> _pushProductsToKiosk(
+    String ip,
+    int port,
+    String pin,
+    List<Product> products, {
+    bool replace = false,
+  }) async {
+    final productsJson = jsonEncode(products.map((p) => p.toJson()).toList());
 
-      final response = await _client.post(
-        Uri.parse('http://$ip:$port/sync/products'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $pin',
-        },
-        body: productsJson,
-      );
+    final response = await _client.post(
+      Uri.parse('http://$ip:$port/sync/products'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $pin',
+        if (replace) 'X-Sync-Mode': 'replace',
+      },
+      body: productsJson,
+    );
 
-      return response.statusCode == 200;
+    return response.statusCode == 200;
   }
 
   Future<bool> uploadPaymentQr(String ip, int port, String pin, String base64Image) async {
@@ -192,7 +200,7 @@ class KioskClientService {
     return null;
   }
 
-  Future<bool> downloadBackup(String ip, int port, String pin, String savePath) async {
+  Future<BackupResult> downloadBackup(String ip, int port, String pin, String savePath) async {
     try {
       final response = await _client.get(
         Uri.parse('http://$ip:$port/backup'),
@@ -204,15 +212,20 @@ class KioskClientService {
       if (response.statusCode == 200) {
         final file = File(savePath);
         await file.writeAsBytes(response.bodyBytes);
-        return true;
+        return const BackupResult.success();
       }
+      final body = response.body.isNotEmpty
+          ? response.body
+          : 'HTTP ${response.statusCode}';
+      debugPrint('Backup download failed: ${response.statusCode} $body');
+      return BackupResult.failure(body);
     } catch (e) {
       debugPrint('Error downloading backup: $e');
+      return BackupResult.failure(e.toString());
     }
-    return false;
   }
 
-  Future<bool> restoreBackup(String ip, int port, String pin, File dbFile) async {
+  Future<RestoreResult> restoreBackup(String ip, int port, String pin, File dbFile) async {
     try {
       final bytes = await dbFile.readAsBytes();
       final response = await _client.post(
@@ -224,10 +237,38 @@ class KioskClientService {
         body: bytes,
       );
 
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        return const RestoreResult.success();
+      }
+      final body = response.body.isNotEmpty
+          ? response.body
+          : 'HTTP ${response.statusCode}';
+      return RestoreResult.failure(body);
     } catch (e) {
       debugPrint('Error restoring backup: $e');
-      return false;
+      return RestoreResult.failure(e.toString());
     }
   }
+}
+
+class RestoreResult {
+  final bool success;
+  final String? message;
+
+  const RestoreResult._(this.success, [this.message]);
+
+  const RestoreResult.success([String? message]) : this._(true, message);
+
+  const RestoreResult.failure(String message) : this._(false, message);
+}
+
+class BackupResult {
+  final bool success;
+  final String? message;
+
+  const BackupResult._(this.success, [this.message]);
+
+  const BackupResult.success([String? message]) : this._(true, message);
+
+  const BackupResult.failure(String message) : this._(false, message);
 }

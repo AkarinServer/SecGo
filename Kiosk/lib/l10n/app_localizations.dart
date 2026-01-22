@@ -389,7 +389,7 @@ abstract class AppLocalizations {
   /// No description provided for @returningHome.
   ///
   /// In en, this message translates to:
-  /// **'Returning to the start screen...'**
+  /// **'Refreshing data...'**
   String get returningHome;
 }
 

@@ -88,6 +88,11 @@ class DatabaseHelper {
     return maps.map((json) => Product.fromJson(json)).toList();
   }
 
+  Future<void> clearProducts() async {
+    final db = await instance.database;
+    await db.delete('products');
+  }
+
   // Order Methods
   Future<void> insertOrder(Order order) async {
     final db = await instance.database;
@@ -112,8 +117,17 @@ class DatabaseHelper {
     // Note: We use raw SQL to attach because sqflite doesn't support DETACH via API directly easily
     // But standard SQL 'ATTACH DATABASE' works.
     
+    var attached = false;
     try {
       await db.execute("ATTACH DATABASE '$backupPath' AS backup_db");
+      attached = true;
+
+      final tables = await db.rawQuery(
+        "SELECT name FROM backup_db.sqlite_master WHERE type='table' AND name='products'",
+      );
+      if (tables.isEmpty) {
+        throw Exception('Backup missing products table');
+      }
       
       // Clear current products
       await db.execute("DELETE FROM products");
@@ -121,15 +135,14 @@ class DatabaseHelper {
       // Insert products from backup
       // Assuming backup_db has 'products' table with same schema
       await db.execute("INSERT INTO products SELECT * FROM backup_db.products");
-      
-      // Detach
-      await db.execute("DETACH DATABASE backup_db");
     } catch (e) {
-      // Attempt detach in case of error to avoid lock
-      try {
-        await db.execute("DETACH DATABASE backup_db");
-      } catch (_) {}
       rethrow;
+    } finally {
+      if (attached) {
+        try {
+          await db.execute("DETACH DATABASE backup_db");
+        } catch (_) {}
+      }
     }
   }
 }

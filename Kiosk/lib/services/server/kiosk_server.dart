@@ -116,8 +116,14 @@ class KioskServerService {
     // Endpoint: Sync Products (Push from Manager)
     router.post('/sync/products', (Request request) async {
       try {
+        final syncMode = request.headers['X-Sync-Mode']?.toLowerCase();
         final payload = await request.readAsString();
-        final List<dynamic> productsJson = jsonDecode(payload);
+        final List<dynamic> productsJson =
+            payload.isNotEmpty ? jsonDecode(payload) as List<dynamic> : <dynamic>[];
+
+        if (syncMode == 'replace') {
+          await DatabaseHelper.instance.clearProducts();
+        }
         
         for (var p in productsJson) {
           await DatabaseHelper.instance.upsertProduct(Product.fromJson(p));
@@ -170,21 +176,61 @@ class KioskServerService {
     // Endpoint: Get Backup (Download DB)
     router.get('/backup', (Request request) async {
       try {
+        debugPrint('Backup request received');
         final dbPath = await getDatabasesPath();
-        final path = join(dbPath, 'kiosk.db');
-        final file = File(path);
-        if (await file.exists()) {
-           return Response.ok(
-             file.openRead(), 
-             headers: {
-               'Content-Type': 'application/x-sqlite3',
-               'Content-Disposition': 'attachment; filename="kiosk.db"'
-             }
-           );
+        final dbFile = File(join(dbPath, 'kiosk.db'));
+        if (await dbFile.exists()) {
+          final backupFile = File(join(dbPath, 'kiosk_backup_export.db'));
+          if (await backupFile.exists()) {
+            await backupFile.delete();
+          }
+
+          final db = await DatabaseHelper.instance.database;
+          var useVacuum = false;
+          try {
+            await db.execute("VACUUM INTO '${backupFile.path}'");
+            useVacuum = true;
+            debugPrint('Backup created via VACUUM INTO');
+          } catch (e) {
+            debugPrint('Backup VACUUM failed, falling back to checkpoint: $e');
+            await db.rawQuery('PRAGMA wal_checkpoint(TRUNCATE)');
+          }
+
+          var fileToSend = useVacuum ? backupFile : dbFile;
+          if (useVacuum && await fileToSend.length() == 0) {
+            fileToSend = dbFile;
+            useVacuum = false;
+            debugPrint('VACUUM backup empty, sending main db');
+          }
+
+          debugPrint('Backup file size: ${await fileToSend.length()} bytes');
+          final streamController = StreamController<List<int>>();
+          fileToSend.openRead().listen(
+            streamController.add,
+            onError: streamController.addError,
+            onDone: () async {
+              if (useVacuum) {
+                try {
+                  await backupFile.delete();
+                } catch (_) {}
+              }
+              await streamController.close();
+            },
+            cancelOnError: true,
+          );
+
+          return Response.ok(
+            streamController.stream,
+            headers: {
+              'Content-Type': 'application/x-sqlite3',
+              'Content-Disposition': 'attachment; filename="kiosk.db"'
+            },
+          );
         } else {
           return Response.notFound('Database file not found');
         }
       } catch (e) {
+        debugPrint('Backup failed: $e');
         return Response.internalServerError(body: 'Backup failed: $e');
       }
     });

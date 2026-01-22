@@ -126,6 +126,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupCreateFailed => 'Failed to create backup';
 
   @override
+  String backupCreateFailedWithReason(Object reason) {
+    return 'Backup failed: $reason';
+  }
+
+  @override
   String get confirmRestore => 'Confirm Restore';
 
   @override
@@ -218,4 +223,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scanKioskHint => 'Scan the QR code on the Kiosk Settings screen';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get deleteProductTitle => 'Delete Product';
+
+  @override
+  String deleteProductMessage(Object name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get deleteSuccess => 'Product deleted';
+
+  @override
+  String get deleteFailed => 'Failed to delete product';
+
+  @override
+  String get deleteSyncFailed => 'Product deleted, but sync to kiosk failed.';
+
+  @override
+  String get connectKioskToUpload =>
+      'Connect to a kiosk to upload the QR code.';
+
+  @override
+  String restoreFailedWithReason(Object reason) {
+    return 'Restore failed: $reason';
+  }
+
+  @override
+  String get enterPinPrompt => 'Enter PIN to pair';
+
+  @override
+  String get enterPinTitle => 'Enter PIN';
+
+  @override
+  String get enterPinHint => 'Kiosk PIN';
+
+  @override
+  String get pinLength => 'PIN must be at least 4 digits';
+
+  @override
+  String get confirm => 'Confirm';
 }

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:kiosk/services/server/kiosk_server.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
-import 'package:kiosk/screens/main_screen.dart';
 
 import 'package:kiosk/services/settings_service.dart';
+import 'package:kiosk/services/restore_notifier.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -51,13 +51,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _runRestoreCompleteFlow() async {
     if (!mounted) return;
+    RestoreNotifier.instance.notifyRestored();
     setState(() => _showRestoreComplete = true);
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const MainScreen()),
-      (route) => false,
-    );
+    setState(() => _showRestoreComplete = false);
   }
 
   Future<void> _startServer() async {
