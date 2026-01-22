@@ -5,7 +5,31 @@
 ![CI](https://github.com/AkarinServer/SecGo/actions/workflows/ci.yml/badge.svg)
 ![Release](https://github.com/AkarinServer/SecGo/actions/workflows/release.yml/badge.svg)
 
-<img alt="SecGo Horizontal Lockup" src="assets/branding/secgo-lockup.png" width="720" />
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img alt="SecGo 管理端" src="Manager/assets/branding/secgo-manager-icon.png" width="120" height="120" />
+      <br />
+      <b>管理端</b>
+      <br />
+      <sub>店主工具</sub>
+    </td>
+    <td align="center" width="33%">
+      <img alt="SecGo 自助端" src="Kiosk/assets/branding/secgo-kiosk-icon.png" width="124" height="120" />
+      <br />
+      <b>自助端</b>
+      <br />
+      <sub>顾客结账</sub>
+    </td>
+    <td align="center" width="33%">
+      <img alt="SecGo Server" src="Server/assets/branding/secgo-server-icon.png" width="120" height="120" />
+      <br />
+      <b>Server</b>
+      <br />
+      <sub>可选后端</sub>
+    </td>
+  </tr>
+</table>
 
 SecGo 是面向小型超市/便利店的一体化自助结账生态系统。包含两款 Flutter 应用（管理端 + 自助端），并支持可选的后端服务。系统强调**离线可用**、**二维码配对**与**点对点同步**。
 

@@ -5,7 +5,31 @@
 ![CI](https://github.com/AkarinServer/SecGo/actions/workflows/ci.yml/badge.svg)
 ![Release](https://github.com/AkarinServer/SecGo/actions/workflows/release.yml/badge.svg)
 
-<img alt="SecGo Horizontal Lockup" src="assets/branding/secgo-lockup.png" width="720" />
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img alt="SecGo Manager App" src="Manager/assets/branding/secgo-manager-icon.png" width="120" height="120" />
+      <br />
+      <b>Manager</b>
+      <br />
+      <sub>Owner Tools</sub>
+    </td>
+    <td align="center" width="33%">
+      <img alt="SecGo Kiosk App" src="Kiosk/assets/branding/secgo-kiosk-icon.png" width="124" height="120" />
+      <br />
+      <b>Kiosk</b>
+      <br />
+      <sub>Customer Checkout</sub>
+    </td>
+    <td align="center" width="33%">
+      <img alt="SecGo Server" src="Server/assets/branding/secgo-server-icon.png" width="120" height="120" />
+      <br />
+      <b>Server</b>
+      <br />
+      <sub>Optional Backend</sub>
+    </td>
+  </tr>
+</table>
 
 SecGo is a complete self‑checkout ecosystem for small supermarkets and convenience stores. It ships with two Flutter apps (Manager + Kiosk) and optional server components. The system is designed to keep working **offline**, with **QR-based pairing** and **peer‑to‑peer sync**.
 
