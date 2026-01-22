@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'Vending Kiosk'**
   String get appTitle;
 
+  /// No description provided for @brandName.
+  ///
+  /// In en, this message translates to:
+  /// **'Baihui Convenience Store'**
+  String get brandName;
+
   /// No description provided for @cart.
   ///
   /// In en, this message translates to:
@@ -115,6 +121,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total:'**
   String get total;
+
+  /// No description provided for @totalWithAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total: {amount}'**
+  String totalWithAmount(Object amount);
+
+  /// No description provided for @itemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String itemsCount(Object count);
 
   /// No description provided for @payNow.
   ///
@@ -182,6 +200,36 @@ abstract class AppLocalizations {
   /// **'Can\'t find product {barcode}'**
   String productNotFound(Object barcode);
 
+  /// No description provided for @scanError.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan error: {error}'**
+  String scanError(Object error);
+
+  /// No description provided for @analyzingDebugImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing debug image...'**
+  String get analyzingDebugImage;
+
+  /// No description provided for @foundBarcodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} barcodes in image'**
+  String foundBarcodes(Object count);
+
+  /// No description provided for @noBarcodesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No barcodes found in debug image'**
+  String get noBarcodesFound;
+
+  /// No description provided for @analyzeImageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error analyzing image: {error}'**
+  String analyzeImageError(Object error);
+
   /// No description provided for @paymentSuccess.
   ///
   /// In en, this message translates to:
@@ -236,17 +284,23 @@ abstract class AppLocalizations {
   /// **'Save & Continue'**
   String get saveAndContinue;
 
-  /// No description provided for @storeName.
+  /// No description provided for @kioskIdLabel.
   ///
   /// In en, this message translates to:
-  /// **'SecGo Store'**
-  String get storeName;
+  /// **'ID: {id}'**
+  String kioskIdLabel(Object id);
 
   /// No description provided for @clearCart.
   ///
   /// In en, this message translates to:
   /// **'Clear Cart'**
   String get clearCart;
+
+  /// No description provided for @emptyCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cart is empty'**
+  String get emptyCart;
 
   /// No description provided for @inputBarcode.
   ///
@@ -260,6 +314,12 @@ abstract class AppLocalizations {
   /// **'No Barcode Item'**
   String get noBarcodeItem;
 
+  /// No description provided for @debugScanFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug Scan File'**
+  String get debugScanFile;
+
   /// No description provided for @checkout.
   ///
   /// In en, this message translates to:
@@ -271,6 +331,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unit: '**
   String get unit;
+
+  /// No description provided for @kioskSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk Settings'**
+  String get kioskSettings;
+
+  /// No description provided for @kioskReadyToSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk is Ready to Sync'**
+  String get kioskReadyToSync;
+
+  /// No description provided for @ipAddressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'IP: {ip}:{port}'**
+  String ipAddressLabel(Object ip, Object port);
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @serverStartFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to Start Server'**
+  String get serverStartFailedTitle;
+
+  /// No description provided for @serverStartFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not find a valid IP address.\nPlease check your Wi-Fi, Hotspot, or Mobile Data connection.'**
+  String get serverStartFailedMessage;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @serverNoIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start server: No IP address found'**
+  String get serverNoIp;
+
+  /// No description provided for @restoreComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Complete'**
+  String get restoreComplete;
+
+  /// No description provided for @returningHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Returning to the start screen...'**
+  String get returningHome;
 }
 
 class _AppLocalizationsDelegate

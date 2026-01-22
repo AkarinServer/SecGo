@@ -1,71 +1,73 @@
-# SecGo 自动售货机生态系统
+# SecGo — 便利店离线自助结账系统
 
-[English Version](README.md)
+![CI](https://github.com/AkarinServer/SecGo/actions/workflows/ci.yml/badge.svg)
+![Release](https://github.com/AkarinServer/SecGo/actions/workflows/release.yml/badge.svg)
 
-专为小型超市和便利店打造的完整自助结账解决方案。该系统由供店主使用的“管理端 App”、供顾客使用的“自助端 Kiosk App”以及完全离线工作的强大数据同步机制组成。
-
----
-
-## 🚀 功能特性
-
-### 🏢 管理端 App (店主)
-*   **商品管理：** 扫描条形码添加商品。通过 Open Food Facts 或阿里云自定义 API 自动填充商品详情。
-*   **库存控制：** 编辑价格、名称和其他商品信息。
-*   **支付设置：** 上传您的个人/商业收款二维码（微信支付/支付宝等）。
-*   **Kiosk 同步：**
-    *   **发现设备：** 扫描 Kiosk 上的二维码即可瞬间配对。
-    *   **推送数据：** 一键将您的整个商品数据库推送到 Kiosk。
-    *   **拉取数据：** (计划中) 从 Kiosk 获取销售统计和订单历史。
-*   **离线优先：** 本地运行。设置完成后，核心功能无需互联网连接。
-
-### 🛒 自助端 Kiosk App (顾客)
-*   **自助结账：** 连续条码扫描，提供快速结账体验。
-*   **购物车系统：** 实时购物车及总价计算。
-*   **支付：** 显示商家的收款二维码供顾客扫描支付。
-*   **管理模式：** 隐藏手势（点击二维码 5 次）+ PIN 码保护，用于访问设置或重置交易。
-*   **Kiosk 服务器：** 运行嵌入式 HTTP 服务器，用于接收来自管理端 App 的商品更新。
-*   **OLED 优化：** 纯黑深色模式，节省电量并防止 OLED 平板烧屏。
-
-### 🌐 通用 API 中间件
-*   **灵活后端：** 在设置中切换不同的商品查询 API。
-*   **Open Food Facts：** 默认的免费全球食品数据库。
-*   **通用 API (阿里云)：** 支持通过阿里云 API 查询中国商品数据（需要 API Key）。
-*   **可定制：** 易于扩展的 `ProductMiddleware` 架构，支持 *任何* JSON API。
+SecGo 是面向小型超市/便利店的一体化自助结账生态系统。包含两款 Flutter 应用（管理端 + 自助端），并支持可选的后端服务。系统强调**离线可用**、**二维码配对**与**点对点同步**。
 
 ---
 
-## 🛠 技术栈
+## ✨ 组件概览
 
-*   **语言：** Dart (Flutter)
-*   **状态管理：** `setState` (简单且健壮)
-*   **本地数据库：** `sqflite` (SQLite)
-*   **网络：** `http`, `shelf` (嵌入式服务器)
-*   **设备发现：** 基于二维码的配对
-*   **环境配置：** `flutter_dotenv` 用于安全存储 API Key
+| 组件 | 角色 | 亮点 |
+| --- | --- | --- |
+| **管理端 App** | 店主使用 | 商品管理、二维码上传、终端同步与备份 |
+| **自助端 Kiosk App** | 顾客使用 | 连续扫码、购物车、支付二维码展示 |
+| **Server（可选）** | 旧版/中心服务 | API 查询与二维码存储（可选） |
 
 ---
 
-## 📦 安装与设置
+## 🧭 核心功能
 
-### 前置要求
-*   Flutter SDK (3.0+)
-*   Android Studio / VS Code
-*   两台设备（一台用于管理端，一台用于 Kiosk）
+### 🏢 管理端 App
+- **商品管理**：扫码录入，支持 API 自动填充
+- **终端配对**：扫码即配对
+- **同步与备份**：推送商品、备份/恢复
+- **离线优先**：本地数据库 + 可选 API 增强
 
-### 1. 配置环境 (管理端)
-在 `Manager/` 目录下创建一个 `.env` 文件：
-```bash
+### 🛒 自助端 Kiosk App
+- **快速结账**：连续扫码 + 实时购物车
+- **支付二维码展示**
+- **管理员模式**：隐藏手势 + PIN
+- **内置服务端**：接收管理端推送
+- **终端友好**：平板布局 + 熄屏保护
+
+---
+
+## 🔗 同步流程（二维码配对）
+1. **Kiosk** → 设置 → 启动服务（需 PIN）
+2. **管理端** → 配对终端 → 扫描二维码
+3. **管理端** 推送商品至 Kiosk
+
+---
+
+## 🧰 环境变量
+
+### 管理端（`Manager/.env`）
+```
 ALI_CLOUD_APP_CODE=your_api_key_here
+STORE_NAME=YOUR_STORE_NAME
 ```
 
-### 2. 运行管理端 App
+### 自助端（`Kiosk/.env`）
+```
+STORE_NAME=YOUR_STORE_NAME
+```
+
+> 模板文件：`Manager/.env_template` 与 `Kiosk/.env_template`
+
+---
+
+## ▶️ 快速开始
+
+### 1) 运行管理端
 ```bash
 cd Manager
 flutter pub get
 flutter run
 ```
 
-### 3. 运行 Kiosk App
+### 2) 运行自助端
 ```bash
 cd Kiosk
 flutter pub get
@@ -74,23 +76,24 @@ flutter run
 
 ---
 
-## 🔗 如何同步 (双重备份系统)
+## 🤖 CI 与发布自动化
 
-1.  **打开 Kiosk：** 进入 **设置** (主屏幕图标) -> 输入 PIN 码 -> 点击 **启动服务器**。
-2.  **打开管理端：** 点击主屏幕上的 **同步 Kiosk**。
-3.  **扫描：** 使用管理端 App 扫描 Kiosk 上显示的二维码。
-4.  **完成：** 商品数据库即刻传输至 Kiosk。
+- **CI**：每次推送/PR 自动执行 lint + 测试。
+- **Release**：每次 push 到 `main` 自动构建 APK，并发布 GitHub Release。
 
 ---
 
-## 📂 项目结构
+## 📁 目录结构
 
-*   `Manager/`: 供店主使用的移动端 App。
-*   `Kiosk/`: 供顾客使用的平板端 App。
-*   `Server/`: (可选/旧版) Rust 后端，现已被点对点同步取代。
+```
+Manager/   # 管理端应用
+Kiosk/     # 自助端应用
+Server/    # 可选 Rust 后端
+.github/   # CI 与发布工作流
+```
 
 ---
 
 ## 📝 许可证
 
-本项目采用 MIT 许可证 - 详情请参阅 [LICENSE](LICENSE) 文件。
+MIT — 详见 [LICENSE](LICENSE)。

@@ -1,7 +1,7 @@
 name: manager
 description: "Vending Machine Manager App"
 publish_to: 'none'
-version: 0.1.0
+version: 0.2.1+2
 
 environment:
   sdk: ^3.9.2
@@ -21,12 +21,15 @@ dependencies:
   mobile_scanner: ^7.1.4
   network_info_plus: ^7.0.0
   path: ^1.9.1
+  path_provider: ^2.1.4
   permission_handler: ^12.0.1
   provider: ^6.1.5+1
   shared_preferences: ^2.5.4
   sqflite: ^2.4.2
 
 dev_dependencies:
+  integration_test:
+    sdk: flutter
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0

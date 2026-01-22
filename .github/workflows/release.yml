@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Read versions
+        id: versions
+        run: |
+          kiosk_version=$(grep -m1 '^version:' Kiosk/pubspec.yaml | awk '{print $2}')
+          manager_version=$(grep -m1 '^version:' Manager/pubspec.yaml | awk '{print $2}')
+          safe_kiosk_version=${kiosk_version//+/-}
+          run_tag="v${safe_kiosk_version}-${GITHUB_RUN_NUMBER}"
+          echo "kiosk_version=$kiosk_version" >> "$GITHUB_OUTPUT"
+          echo "manager_version=$manager_version" >> "$GITHUB_OUTPUT"
+          echo "tag=$run_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build Kiosk APK
+        working-directory: Kiosk
+        run: |
+          flutter pub get
+          flutter build apk --release
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            "$GITHUB_WORKSPACE/artifacts/SecGo-Kiosk-${{ steps.versions.outputs.kiosk_version }}.apk"
+
+      - name: Build Manager APK
+        working-directory: Manager
+        run: |
+          flutter pub get
+          flutter build apk --release
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            "$GITHUB_WORKSPACE/artifacts/SecGo-Manager-${{ steps.versions.outputs.manager_version }}.apk"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.versions.outputs.tag }}
+          name: SecGo ${{ steps.versions.outputs.tag }}
+          body: |
+            Automated release generated on push to main.
+
+            - Kiosk version: ${{ steps.versions.outputs.kiosk_version }}
+            - Manager version: ${{ steps.versions.outputs.manager_version }}
+          files: |
+            artifacts/*.apk

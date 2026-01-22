@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:kiosk/models/product.dart';
 import 'package:kiosk/screens/main_screen.dart';
@@ -10,6 +11,8 @@ import 'package:kiosk/l10n/app_localizations.dart';
 import 'package:kiosk/widgets/screen_saver.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Hive.initFlutter();
   Hive.registerAdapter(ProductAdapter());
   
@@ -17,8 +20,7 @@ void main() async {
   await settingsService.init();
 
   // Set preferred orientations to landscape for Kiosk
-  WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Enable Wakelock to keep screen always on
   WakelockPlus.enable();
 

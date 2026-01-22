@@ -1,4 +1,4 @@
-package com.example.kiosk
+package com.secgo.manager
 
 import io.flutter.embedding.android.FlutterActivity
 

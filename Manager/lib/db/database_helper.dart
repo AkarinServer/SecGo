@@ -1,13 +1,23 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:flutter/foundation.dart';
 import 'package:manager/models/product.dart';
 import 'package:manager/models/kiosk.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper instance = DatabaseHelper._init();
-  static Database? _database;
+  static final DatabaseHelper _instance = DatabaseHelper._init();
+  static DatabaseHelper? _mockInstance;
+  
+  static DatabaseHelper get instance => _mockInstance ?? _instance;
+
+  @visibleForTesting
+  static set mockInstance(DatabaseHelper? mock) => _mockInstance = mock;
 
   DatabaseHelper._init();
+  @visibleForTesting
+  DatabaseHelper.testing();
+
+  static Database? _database;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -21,7 +31,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3, // Incremented version
+      version: 4, // Incremented version
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -51,7 +61,8 @@ class DatabaseHelper {
         port INTEGER NOT NULL,
         pin TEXT NOT NULL,
         name TEXT,
-        last_synced INTEGER
+        last_synced INTEGER,
+        device_id TEXT
       )
     ''');
   }
@@ -64,6 +75,9 @@ class DatabaseHelper {
     }
     if (oldVersion < 3) {
       await _createKiosksTable(db);
+    }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE kiosks ADD COLUMN device_id TEXT');
     }
   }
 
@@ -100,23 +114,36 @@ class DatabaseHelper {
   // Kiosk Methods
   Future<int> insertKiosk(Kiosk kiosk) async {
     final db = await instance.database;
-    // Check if kiosk with same IP exists, update if so
+    final hasDeviceId = kiosk.deviceId != null && kiosk.deviceId!.isNotEmpty;
     final existing = await db.query(
       'kiosks',
-      where: 'ip = ?',
-      whereArgs: [kiosk.ip],
+      where: hasDeviceId ? 'device_id = ?' : 'ip = ?',
+      whereArgs: [hasDeviceId ? kiosk.deviceId : kiosk.ip],
     );
 
     if (existing.isNotEmpty) {
       return await db.update(
         'kiosks',
         kiosk.toMap(),
-        where: 'ip = ?',
-        whereArgs: [kiosk.ip],
+        where: hasDeviceId ? 'device_id = ?' : 'ip = ?',
+        whereArgs: [hasDeviceId ? kiosk.deviceId : kiosk.ip],
       );
     } else {
       return await db.insert('kiosks', kiosk.toMap());
     }
+  }
+
+  Future<int> updateKiosk(Kiosk kiosk) async {
+    final db = await instance.database;
+    if (kiosk.id == null) {
+      return await insertKiosk(kiosk);
+    }
+    return await db.update(
+      'kiosks',
+      kiosk.toMap(),
+      where: 'id = ?',
+      whereArgs: [kiosk.id],
+    );
   }
 
   Future<List<Kiosk>> getAllKiosks() async {

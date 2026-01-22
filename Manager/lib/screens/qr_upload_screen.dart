@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:manager/services/api_service.dart';
+import 'package:manager/db/database_helper.dart';
+import 'package:manager/services/kiosk_client/kiosk_client.dart';
 import 'package:manager/l10n/app_localizations.dart';
 
 class QrUploadScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class QrUploadScreen extends StatefulWidget {
 }
 
 class _QrUploadScreenState extends State<QrUploadScreen> {
-  final ApiService _apiService = ApiService();
+  final KioskClientService _kioskService = KioskClientService();
   final ImagePicker _picker = ImagePicker();
   File? _image;
   bool _isUploading = false;
@@ -31,21 +32,56 @@ class _QrUploadScreenState extends State<QrUploadScreen> {
     if (_image == null) return;
 
     setState(() => _isUploading = true);
-    final bytes = await _image!.readAsBytes();
-    final base64Image = base64Encode(bytes);
+    try {
+      final bytes = await _image!.readAsBytes();
+      final base64Image = base64Encode(bytes);
 
-    final success = await _apiService.uploadPaymentQr(base64Image);
-    setState(() => _isUploading = false);
+      final kiosks = await DatabaseHelper.instance.getAllKiosks();
+      if (kiosks.isEmpty) {
+        if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.noKiosksPaired)),
+          );
+        }
+        setState(() => _isUploading = false);
+        return;
+      }
 
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.successUpload)),
-      );
-      Navigator.pop(context);
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.errorUpload)),
-      );
+      int successCount = 0;
+      for (final kiosk in kiosks) {
+        final success = await _kioskService.uploadPaymentQr(
+          kiosk.ip, 
+          kiosk.port, 
+          kiosk.pin, 
+          base64Image
+        );
+        if (success) successCount++;
+      }
+
+      setState(() => _isUploading = false);
+
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        if (successCount > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.uploadedToKiosks(successCount))),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.errorUpload)),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() => _isUploading = false);
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorWithMessage(e))),
+        );
+      }
     }
   }
 

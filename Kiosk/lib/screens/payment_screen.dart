@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:kiosk/services/api_service.dart';
+import 'package:intl/intl.dart';
+import 'package:kiosk/services/settings_service.dart';
 // import 'package:qr_flutter/qr_flutter.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
 
@@ -19,7 +20,7 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  final ApiService _apiService = ApiService();
+  final SettingsService _settingsService = SettingsService();
   String? _qrData;
   bool _isLoading = true;
   int _adminTapCount = 0;
@@ -31,7 +32,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _loadQrCode() async {
-    final qrData = await _apiService.getPaymentQr();
+    final qrData = _settingsService.getPaymentQr();
     if (mounted) {
       setState(() {
         _qrData = qrData;
@@ -89,6 +90,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final currencyFormat = NumberFormat.currency(symbol: '¥');
     
     return Scaffold(
       // backgroundColor: Colors.black, // Use theme
@@ -102,7 +104,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Total: \$${widget.totalAmount.toStringAsFixed(2)}',
+              l10n.totalWithAmount(currencyFormat.format(widget.totalAmount)),
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),

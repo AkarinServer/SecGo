@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:manager/services/kiosk_client/kiosk_client.dart';
 import 'package:manager/db/database_helper.dart';
 import 'package:manager/models/kiosk.dart';
+import 'package:manager/l10n/app_localizations.dart';
 import 'dart:convert';
 
 class SyncKioskScreen extends StatefulWidget {
@@ -25,7 +26,7 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
       try {
         final Map<String, dynamic> data = jsonDecode(code);
         if (data.containsKey('ip') && data.containsKey('port') && data.containsKey('pin')) {
-          _syncWithKiosk(data['ip'], data['port'], data['pin']);
+          _pairWithKiosk(data['ip'], data['port'], data['pin']);
         }
       } catch (e) {
         // Not a valid JSON or Kiosk QR
@@ -33,13 +34,15 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
     }
   }
 
-  Future<void> _syncWithKiosk(String ip, int port, String pin) async {
+  Future<void> _pairWithKiosk(String ip, int port, String pin) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isSyncing = true;
-      _statusMessage = 'Syncing with Kiosk at $ip...';
+      _statusMessage = l10n.pairingKiosk(ip);
     });
 
-    final success = await _kioskService.syncProductsToKiosk(ip, port, pin);
+    final fetchedDeviceId = await _kioskService.fetchDeviceId(ip, port, pin);
+    final success = fetchedDeviceId != null;
 
     if (mounted) {
       if (success) {
@@ -50,18 +53,18 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
           ip: ip,
           port: port,
           pin: pin,
-          name: 'Kiosk $ip', // Default name
           lastSynced: DateTime.now().millisecondsSinceEpoch,
+          deviceId: fetchedDeviceId,
         ));
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kiosk Synced & Paired Successfully')),
+          SnackBar(content: Text(l10n.pairSuccess)),
         );
         Navigator.pop(context);
       } else {
         setState(() {
           _isSyncing = false;
-          _statusMessage = 'Sync Failed!';
+          _statusMessage = l10n.pairFailed;
         });
       }
     }
@@ -69,8 +72,9 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan Kiosk QR to Sync')),
+      appBar: AppBar(title: Text(l10n.pairKioskTitle)),
       body: Column(
         children: [
           Expanded(
@@ -88,10 +92,10 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
                       children: [
                         const CircularProgressIndicator(),
                         const SizedBox(height: 20),
-                        Text(_statusMessage ?? 'Scanning...'),
+                        Text(_statusMessage ?? l10n.scanBarcode),
                       ],
                     )
-                  : const Text('Scan the QR code on the Kiosk Settings screen'),
+                  : Text(l10n.scanKioskHint),
             ),
           ),
         ],

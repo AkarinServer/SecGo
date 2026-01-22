@@ -12,10 +12,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => '自动售货机';
 
   @override
+  String get brandName => '百惠便利店';
+
+  @override
   String get cart => '购物车';
 
   @override
   String get total => '总计:';
+
+  @override
+  String totalWithAmount(Object amount) {
+    return '总计: $amount';
+  }
+
+  @override
+  String itemsCount(Object count) {
+    return '$count 件';
+  }
 
   @override
   String get payNow => '立即支付';
@@ -55,38 +68,63 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String scanError(Object error) {
+    return '扫描出错: $error';
+  }
+
+  @override
+  String get analyzingDebugImage => '正在分析调试图片...';
+
+  @override
+  String foundBarcodes(Object count) {
+    return '在图片中发现 $count 个条码';
+  }
+
+  @override
+  String get noBarcodesFound => '调试图片中未发现条码';
+
+  @override
+  String analyzeImageError(Object error) {
+    return '分析图片出错: $error';
+  }
+
+  @override
   String get paymentSuccess => '支付成功!';
 
   @override
-  String get setupPin => 'Setup Admin PIN';
+  String get setupPin => '设置管理员PIN码';
 
   @override
-  String get setAdminPin => 'Set Admin PIN';
+  String get setAdminPin => '设置管理员PIN码';
 
   @override
-  String get pinDescription =>
-      'This PIN will be used to access settings and connect to the manager app.';
+  String get pinDescription => '此PIN码将用于访问设置和连接管理应用。';
 
   @override
-  String get pinRequired => 'PIN is required';
+  String get pinRequired => '请输入PIN码';
 
   @override
-  String get pinLength => 'PIN must be at least 4 digits';
+  String get pinLength => 'PIN码至少需要4位数字';
 
   @override
-  String get confirmPin => 'Confirm PIN';
+  String get confirmPin => '确认PIN码';
 
   @override
-  String get pinMismatch => 'PINs do not match';
+  String get pinMismatch => '两次输入的PIN码不一致';
 
   @override
-  String get saveAndContinue => 'Save & Continue';
+  String get saveAndContinue => '保存并继续';
 
   @override
-  String get storeName => 'SecGo 便利店';
+  String kioskIdLabel(Object id) {
+    return '编号: $id';
+  }
 
   @override
   String get clearCart => '清空购物车';
+
+  @override
+  String get emptyCart => '购物车为空';
 
   @override
   String get inputBarcode => '输入商品条码';
@@ -95,8 +133,43 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noBarcodeItem => '无条码商品';
 
   @override
+  String get debugScanFile => '调试扫描文件';
+
+  @override
   String get checkout => '去结算';
 
   @override
   String get unit => '单价: ';
+
+  @override
+  String get kioskSettings => '终端设置';
+
+  @override
+  String get kioskReadyToSync => '终端已准备好同步';
+
+  @override
+  String ipAddressLabel(Object ip, Object port) {
+    return 'IP: $ip:$port';
+  }
+
+  @override
+  String get close => '关闭';
+
+  @override
+  String get serverStartFailedTitle => '启动服务失败';
+
+  @override
+  String get serverStartFailedMessage => '无法找到有效的IP地址。\n请检查Wi-Fi、热点或移动数据连接。';
+
+  @override
+  String get retry => '重试';
+
+  @override
+  String get serverNoIp => '启动服务失败：未找到IP地址';
+
+  @override
+  String get restoreComplete => '恢复完成';
+
+  @override
+  String get returningHome => '正在返回初始界面...';
 }

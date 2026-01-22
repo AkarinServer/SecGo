@@ -12,10 +12,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Vending Kiosk';
 
   @override
+  String get brandName => 'Baihui Convenience Store';
+
+  @override
   String get cart => 'Cart';
 
   @override
   String get total => 'Total:';
+
+  @override
+  String totalWithAmount(Object amount) {
+    return 'Total: $amount';
+  }
+
+  @override
+  String itemsCount(Object count) {
+    return '$count items';
+  }
 
   @override
   String get payNow => 'PAY NOW';
@@ -55,6 +68,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String scanError(Object error) {
+    return 'Scan error: $error';
+  }
+
+  @override
+  String get analyzingDebugImage => 'Analyzing debug image...';
+
+  @override
+  String foundBarcodes(Object count) {
+    return 'Found $count barcodes in image';
+  }
+
+  @override
+  String get noBarcodesFound => 'No barcodes found in debug image';
+
+  @override
+  String analyzeImageError(Object error) {
+    return 'Error analyzing image: $error';
+  }
+
+  @override
   String get paymentSuccess => 'Payment Successful!';
 
   @override
@@ -83,10 +117,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveAndContinue => 'Save & Continue';
 
   @override
-  String get storeName => 'SecGo Store';
+  String kioskIdLabel(Object id) {
+    return 'ID: $id';
+  }
 
   @override
   String get clearCart => 'Clear Cart';
+
+  @override
+  String get emptyCart => 'Your cart is empty';
 
   @override
   String get inputBarcode => 'Input Barcode';
@@ -95,8 +134,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noBarcodeItem => 'No Barcode Item';
 
   @override
+  String get debugScanFile => 'Debug Scan File';
+
+  @override
   String get checkout => 'Checkout';
 
   @override
   String get unit => 'Unit: ';
+
+  @override
+  String get kioskSettings => 'Kiosk Settings';
+
+  @override
+  String get kioskReadyToSync => 'Kiosk is Ready to Sync';
+
+  @override
+  String ipAddressLabel(Object ip, Object port) {
+    return 'IP: $ip:$port';
+  }
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get serverStartFailedTitle => 'Failed to Start Server';
+
+  @override
+  String get serverStartFailedMessage =>
+      'Could not find a valid IP address.\nPlease check your Wi-Fi, Hotspot, or Mobile Data connection.';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get serverNoIp => 'Failed to start server: No IP address found';
+
+  @override
+  String get restoreComplete => 'Restore Complete';
+
+  @override
+  String get returningHome => 'Returning to the start screen...';
 }

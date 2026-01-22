@@ -2,11 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:manager/models/product.dart';
-
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:manager/models/product.dart';
 import 'package:manager/services/settings_service.dart';
 import 'package:manager/services/middleware/product_middleware.dart';
 import 'package:manager/services/middleware/universal_product_middleware.dart';

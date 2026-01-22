@@ -34,7 +34,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.setupPin ?? 'Setup Admin PIN'),
+        title: Text(l10n.setupPin),
         centerTitle: true,
       ),
       body: Center(
@@ -48,13 +48,13 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  l10n.setAdminPin ?? 'Set Admin PIN',
+                  l10n.setAdminPin,
                   style: theme.textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  l10n.pinDescription ?? 'This PIN will be used to access settings and connect to the manager app.',
+                  l10n.pinDescription,
                   style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -70,10 +70,10 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return l10n.pinRequired ?? 'PIN is required';
+                      return l10n.pinRequired;
                     }
                     if (value.length < 4) {
-                      return l10n.pinLength ?? 'PIN must be at least 4 digits';
+                      return l10n.pinLength;
                     }
                     return null;
                   },
@@ -82,7 +82,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                 TextFormField(
                   controller: _confirmPinController,
                   decoration: InputDecoration(
-                    labelText: l10n.confirmPin ?? 'Confirm PIN',
+                    labelText: l10n.confirmPin,
                     border: const OutlineInputBorder(),
                     prefixIcon: const Icon(Icons.lock_outline),
                   ),
@@ -90,7 +90,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                   obscureText: true,
                   validator: (value) {
                     if (value != _pinController.text) {
-                      return l10n.pinMismatch ?? 'PINs do not match';
+                      return l10n.pinMismatch;
                     }
                     return null;
                   },
@@ -102,7 +102,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: Text(
-                    l10n.saveAndContinue ?? 'Save & Continue',
+                    l10n.saveAndContinue,
                     style: const TextStyle(fontSize: 18),
                   ),
                 ),

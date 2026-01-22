@@ -31,8 +31,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveSettings() async {
     await _settingsService.setApiUrl(_urlController.text);
     if (mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Settings saved')),
+        SnackBar(content: Text(l10n.settingsSaved)),
       );
       Navigator.pop(context);
     }
@@ -40,8 +41,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -51,16 +53,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   TextField(
                     controller: _urlController,
-                    decoration: const InputDecoration(
-                      labelText: 'Product API URL',
-                      hintText: 'https://barcode100.market.alicloudapi.com/getBarcode?Code=',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.productApiUrlLabel,
+                      hintText: l10n.productApiUrlHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _saveSettings,
-                    child: const Text('Save'),
+                    child: Text(l10n.save),
                   ),
                 ],
               ),

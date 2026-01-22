@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:kiosk/models/product.dart';
+import 'package:kiosk/models/order.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -85,5 +86,50 @@ class DatabaseHelper {
     final db = await instance.database;
     final maps = await db.query('products');
     return maps.map((json) => Product.fromJson(json)).toList();
+  }
+
+  // Order Methods
+  Future<void> insertOrder(Order order) async {
+    final db = await instance.database;
+    await db.insert(
+      'orders',
+      order.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Order>> getAllOrders() async {
+    final db = await instance.database;
+    final maps = await db.query('orders', orderBy: 'timestamp DESC');
+    return maps.map((map) => Order.fromMap(map)).toList();
+  }
+
+  // Restore Logic
+  Future<void> restoreProductsFromBackup(String backupPath) async {
+    final db = await instance.database;
+    
+    // Attach the backup database
+    // Note: We use raw SQL to attach because sqflite doesn't support DETACH via API directly easily
+    // But standard SQL 'ATTACH DATABASE' works.
+    
+    try {
+      await db.execute("ATTACH DATABASE '$backupPath' AS backup_db");
+      
+      // Clear current products
+      await db.execute("DELETE FROM products");
+      
+      // Insert products from backup
+      // Assuming backup_db has 'products' table with same schema
+      await db.execute("INSERT INTO products SELECT * FROM backup_db.products");
+      
+      // Detach
+      await db.execute("DETACH DATABASE backup_db");
+    } catch (e) {
+      // Attempt detach in case of error to avoid lock
+      try {
+        await db.execute("DETACH DATABASE backup_db");
+      } catch (_) {}
+      rethrow;
+    }
   }
 }

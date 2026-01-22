@@ -8,7 +8,7 @@ class ScreenSaver extends StatefulWidget {
   const ScreenSaver({
     super.key,
     required this.child,
-    this.timeout = const Duration(minutes: 1),
+    this.timeout = const Duration(minutes: 3),
   });
 
   @override

@@ -104,6 +104,90 @@ abstract class AppLocalizations {
   /// **'Vending Manager'**
   String get appTitle;
 
+  /// No description provided for @pairedKiosks.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired Kiosks'**
+  String get pairedKiosks;
+
+  /// No description provided for @noKiosksPaired.
+  ///
+  /// In en, this message translates to:
+  /// **'No kiosks paired'**
+  String get noKiosksPaired;
+
+  /// No description provided for @kioskLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk'**
+  String get kioskLabel;
+
+  /// No description provided for @kioskWithId.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk {id}'**
+  String kioskWithId(Object id);
+
+  /// No description provided for @kioskHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} History'**
+  String kioskHistoryTitle(Object name);
+
+  /// No description provided for @removeKioskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Kiosk'**
+  String get removeKioskTitle;
+
+  /// No description provided for @removeKioskMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove {kiosk}?'**
+  String removeKioskMessage(Object kiosk);
+
+  /// No description provided for @viewOrderHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'View Order History'**
+  String get viewOrderHistory;
+
+  /// No description provided for @connected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get connected;
+
+  /// No description provided for @pairNewKiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair New Kiosk'**
+  String get pairNewKiosk;
+
+  /// No description provided for @runDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Diagnostics'**
+  String get runDiagnostics;
+
+  /// No description provided for @runningSyncTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Running Sync Test...'**
+  String get runningSyncTest;
+
+  /// No description provided for @runningBackupTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Running Backup Test...'**
+  String get runningBackupTest;
+
+  /// No description provided for @testsCompleteCheckLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests Complete. Check Logs.'**
+  String get testsCompleteCheckLogs;
+
   /// No description provided for @addProduct.
   ///
   /// In en, this message translates to:
@@ -134,11 +218,23 @@ abstract class AppLocalizations {
   /// **'Price'**
   String get price;
 
+  /// No description provided for @barcodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode'**
+  String get barcodeLabel;
+
   /// No description provided for @saveProduct.
   ///
   /// In en, this message translates to:
   /// **'Save Product'**
   String get saveProduct;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
 
   /// No description provided for @successSave.
   ///
@@ -193,6 +289,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please enter price'**
   String get priceRequired;
+
+  /// No description provided for @backupRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup & Restore'**
+  String get backupRestore;
+
+  /// No description provided for @createNewBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create New Backup'**
+  String get createNewBackup;
+
+  /// No description provided for @noBackupsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No backups found'**
+  String get noBackupsFound;
+
+  /// No description provided for @backupCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup created successfully'**
+  String get backupCreated;
+
+  /// No description provided for @backupCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create backup'**
+  String get backupCreateFailed;
+
+  /// No description provided for @confirmRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Restore'**
+  String get confirmRestore;
+
+  /// No description provided for @restoreOverwriteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This will overwrite the products on the Kiosk with this backup. Orders will be preserved. Continue?'**
+  String get restoreOverwriteWarning;
+
+  /// No description provided for @restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restore;
+
+  /// No description provided for @restoreCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore completed successfully'**
+  String get restoreCompleted;
+
+  /// No description provided for @restoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed'**
+  String get restoreFailed;
+
+  /// No description provided for @failedToConnectKiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to connect to Kiosk'**
+  String get failedToConnectKiosk;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @noOrderHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No order history found'**
+  String get noOrderHistory;
+
+  /// No description provided for @orderNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Order #{number}'**
+  String orderNumber(Object number);
+
+  /// No description provided for @quantityMultiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'x{quantity}'**
+  String quantityMultiplier(Object quantity);
+
+  /// No description provided for @noProductsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No products found'**
+  String get noProductsFound;
+
+  /// No description provided for @uploadedToKiosks.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded to {count} kiosks'**
+  String uploadedToKiosks(Object count);
+
+  /// No description provided for @errorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String errorWithMessage(Object error);
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings saved'**
+  String get settingsSaved;
+
+  /// No description provided for @productApiUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product API URL'**
+  String get productApiUrlLabel;
+
+  /// No description provided for @productApiUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://barcode100.market.alicloudapi.com/getBarcode?Code='**
+  String get productApiUrlHint;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
+  /// No description provided for @connectKioskToEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to a kiosk to add or edit products.'**
+  String get connectKioskToEdit;
+
+  /// No description provided for @kioskNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'No kiosk connected'**
+  String get kioskNotConnected;
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to sync to kiosk. Please try again.'**
+  String get syncFailed;
+
+  /// No description provided for @pairKioskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Kiosk QR to Pair'**
+  String get pairKioskTitle;
+
+  /// No description provided for @pairingKiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing with kiosk at {ip}...'**
+  String pairingKiosk(Object ip);
+
+  /// No description provided for @pairFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing failed'**
+  String get pairFailed;
+
+  /// No description provided for @pairSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk paired successfully'**
+  String get pairSuccess;
+
+  /// No description provided for @scanKioskHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the QR code on the Kiosk Settings screen'**
+  String get scanKioskHint;
 }
 
 class _AppLocalizationsDelegate

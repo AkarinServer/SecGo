@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Add intl for date formatting
 import 'package:kiosk/db/database_helper.dart';
 import 'package:kiosk/models/product.dart';
+import 'package:kiosk/models/order.dart' as model; // Alias to avoid conflict if needed
 import 'package:kiosk/screens/payment_screen.dart';
 import 'package:kiosk/screens/settings_screen.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
+import 'package:kiosk/config/store_config.dart';
 
 // Helper class for cart items
 class CartItem {
@@ -182,8 +184,9 @@ class _MainScreenState extends State<MainScreen> {
   void _handleBarcodeError(Object error, StackTrace stackTrace) {
     debugPrint('Barcode scan error: $error');
     if (mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Scan error: $error')),
+        SnackBar(content: Text(l10n.scanError(error))),
       );
     }
   }
@@ -192,8 +195,9 @@ class _MainScreenState extends State<MainScreen> {
     const String filePath = '/sdcard/DCIM/Camera/IMG_20260122_024901.jpg';
     try {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Analyzing debug image...")),
+          SnackBar(content: Text(l10n.analyzingDebugImage)),
         );
       }
       
@@ -202,21 +206,24 @@ class _MainScreenState extends State<MainScreen> {
       if (capture != null && capture.barcodes.isNotEmpty) {
         await _handleBarcodeDetect(capture);
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
            ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Found ${capture.barcodes.length} barcodes in image")),
+            SnackBar(content: Text(l10n.foundBarcodes(capture.barcodes.length))),
           );
         }
       } else {
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("No barcodes found in debug image")),
+            SnackBar(content: Text(l10n.noBarcodesFound)),
           );
         }
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error analyzing image: $e")),
+          SnackBar(content: Text(l10n.analyzeImageError(e))),
         );
       }
     }
@@ -228,7 +235,22 @@ class _MainScreenState extends State<MainScreen> {
       MaterialPageRoute(
         builder: (_) => PaymentScreen(
           totalAmount: _totalAmount,
-          onPaymentConfirmed: () {
+          onPaymentConfirmed: () async {
+            // Create and save order
+            final order = model.Order(
+              id: DateTime.now().millisecondsSinceEpoch.toString(), // Simple ID
+              items: _cartItems.values.map((item) => model.OrderItem(
+                barcode: item.product.barcode,
+                name: item.product.name,
+                price: item.product.price,
+                quantity: item.quantity,
+              )).toList(),
+              totalAmount: _totalAmount,
+              timestamp: DateTime.now().millisecondsSinceEpoch,
+            );
+            
+            await _db.insertOrder(order);
+
             _clearCart();
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -244,6 +266,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final storeName = StoreConfig.storeName;
     
     // Formatting currency
     final currencyFormat = NumberFormat.currency(symbol: '¥'); // Or '$' based on locale
@@ -265,22 +288,17 @@ class _MainScreenState extends State<MainScreen> {
                     children: [
                       Row(
                         children: [
-                          const Text(
-                            "惠友", // Logo/Brand placeholder
+                          Text(
+                            storeName,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Text(
-                            l10n.storeName,
-                            style: const TextStyle(color: Colors.white, fontSize: 18),
-                          ),
                           const SizedBox(width: 20),
                           Text(
-                            "ID: 0000", // Placeholder ID
+                            l10n.kioskIdLabel('0000'), // Placeholder ID
                             style: TextStyle(color: Colors.white.withOpacity(0.8)),
                           ),
                           const SizedBox(width: 20),
@@ -308,7 +326,7 @@ class _MainScreenState extends State<MainScreen> {
                 child: _cartItems.isEmpty
                     ? Center(
                         child: Text(
-                          "Your cart is empty",
+                          l10n.emptyCart,
                           style: theme.textTheme.headlineSmall?.copyWith(color: Colors.grey),
                         ),
                       )
@@ -436,7 +454,7 @@ class _MainScreenState extends State<MainScreen> {
                         IconButton(
                           icon: const Icon(Icons.image_search, color: Colors.grey),
                           onPressed: _testScanFile,
-                          tooltip: "Debug Scan File",
+                          tooltip: l10n.debugScanFile,
                         ),
                          // Settings Button (Hidden access)
                         IconButton(
@@ -457,7 +475,7 @@ class _MainScreenState extends State<MainScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "Total: ${currencyFormat.format(_totalAmount)}",
+                          l10n.totalWithAmount(currencyFormat.format(_totalAmount)),
                           style: const TextStyle(
                             fontSize: 16,
                             color: Colors.red,
@@ -465,7 +483,7 @@ class _MainScreenState extends State<MainScreen> {
                           ),
                         ),
                         Text(
-                          "$_totalItems items",
+                          l10n.itemsCount(_totalItems),
                           style: const TextStyle(color: Colors.grey, fontSize: 12),
                         ),
                       ],
