@@ -250,31 +250,38 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  void _processPayment() {
+  Future<void> _processPayment() async {
+    if (_cartItems.isEmpty) return;
+    final order = model.Order(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      items: _cartItems.values
+          .map((item) => model.OrderItem(
+                barcode: item.product.barcode,
+                name: item.product.name,
+                price: item.product.price,
+                quantity: item.quantity,
+              ))
+          .toList(),
+      totalAmount: _totalAmount,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    try {
+      await _db.insertOrder(order);
+    } catch (e) {
+      debugPrint('Failed to save order: $e');
+    }
+
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => PaymentScreen(
           totalAmount: _totalAmount,
-          onPaymentConfirmed: () async {
+          onPaymentConfirmed: () {
             final l10n = AppLocalizations.of(context)!;
             final navigator = Navigator.of(context);
             final messenger = ScaffoldMessenger.of(context);
-            // Create and save order
-            final order = model.Order(
-              id: DateTime.now().millisecondsSinceEpoch.toString(), // Simple ID
-              items: _cartItems.values.map((item) => model.OrderItem(
-                barcode: item.product.barcode,
-                name: item.product.name,
-                price: item.product.price,
-                quantity: item.quantity,
-              )).toList(),
-              totalAmount: _totalAmount,
-              timestamp: DateTime.now().millisecondsSinceEpoch,
-            );
-            
-            await _db.insertOrder(order);
-            if (!mounted) return;
 
             _clearCart();
             navigator.pop();
