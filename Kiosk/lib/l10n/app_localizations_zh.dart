@@ -171,5 +171,5 @@ class AppLocalizationsZh extends AppLocalizations {
   String get restoreComplete => '恢复完成';
 
   @override
-  String get returningHome => '正在返回初始界面...';
+  String get returningHome => '正在刷新数据...';
 }

@@ -91,7 +91,7 @@ void main() {
       final service = KioskClientService(client: mockClient);
       final result = await service.restoreBackup(ip, port, pin, tempFile);
 
-      expect(result, true);
+      expect(result.success, true);
 
       // Cleanup
       tempDir.deleteSync(recursive: true);

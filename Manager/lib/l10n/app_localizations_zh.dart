@@ -216,4 +216,47 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get scanKioskHint => '请扫描自助终端设置页面上的二维码';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get deleteProductTitle => '删除商品';
+
+  @override
+  String deleteProductMessage(Object name) {
+    return '确定要删除$name吗？';
+  }
+
+  @override
+  String get deleteSuccess => '商品已删除';
+
+  @override
+  String get deleteFailed => '删除失败';
+
+  @override
+  String get deleteSyncFailed => '商品已删除，但同步到自助终端失败。';
+
+  @override
+  String get connectKioskToUpload => '请先连接自助终端后再上传二维码。';
+
+  @override
+  String restoreFailedWithReason(Object reason) {
+    return '恢复失败：$reason';
+  }
+
+  @override
+  String get enterPinPrompt => '请输入PIN以完成配对';
+
+  @override
+  String get enterPinTitle => '输入PIN';
+
+  @override
+  String get enterPinHint => '终端PIN';
+
+  @override
+  String get pinLength => 'PIN至少4位';
+
+  @override
+  String get confirm => '确认';
 }

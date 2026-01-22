@@ -173,5 +173,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreComplete => 'Restore Complete';
 
   @override
-  String get returningHome => 'Returning to the start screen...';
+  String get returningHome => 'Refreshing data...';
 }

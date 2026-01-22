@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:manager/models/kiosk.dart';
 import 'package:manager/services/kiosk_client/kiosk_client.dart';
+import 'package:manager/services/kiosk_connection_service.dart';
 import 'package:path/path.dart' as path;
 import 'package:manager/l10n/app_localizations.dart';
 
@@ -18,13 +19,31 @@ class KioskBackupScreen extends StatefulWidget {
 
 class _KioskBackupScreenState extends State<KioskBackupScreen> {
   final KioskClientService _kioskService = KioskClientService();
+  final KioskConnectionService _connectionService = KioskConnectionService();
   List<FileSystemEntity> _backups = [];
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _connectionService.addListener(_onConnectionChange);
     _loadBackups();
+  }
+
+  @override
+  void dispose() {
+    _connectionService.removeListener(_onConnectionChange);
+    super.dispose();
+  }
+
+  void _onConnectionChange() {
+    if (mounted) setState(() {});
+  }
+
+  bool get _isConnected {
+    final kioskId = widget.kiosk.id;
+    if (kioskId == null) return _connectionService.hasConnectedKiosk;
+    return _connectionService.isKioskConnected(kioskId);
   }
 
   Future<void> _loadBackups() async {
@@ -45,8 +64,15 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
   }
 
   Future<void> _createBackup() async {
-    setState(() => _isLoading = true);
     final l10n = AppLocalizations.of(context)!;
+    if (!_isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.kioskNotConnected)),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
     try {
       final dir = await getApplicationSupportDirectory();
       final backupDir = Directory(path.join(dir.path, 'backups', 'kiosk_${widget.kiosk.id}'));
@@ -91,6 +117,13 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
 
   Future<void> _restoreBackup(File file) async {
     final l10n = AppLocalizations.of(context)!;
+    if (!_isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.kioskNotConnected)),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -114,20 +147,25 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final success = await _kioskService.restoreBackup(
+      final result = await _kioskService.restoreBackup(
         widget.kiosk.ip,
         widget.kiosk.port,
         widget.kiosk.pin,
         file,
       );
 
-      if (success && mounted) {
+      if (result.success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.restoreCompleted)),
         );
+        await _connectionService.refresh();
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.restoreFailed)),
+          SnackBar(
+            content: Text(
+              l10n.restoreFailedWithReason(result.message ?? l10n.restoreFailed),
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -144,6 +182,7 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isConnected = _isConnected;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.backupRestore)),
       body: _isLoading
@@ -153,7 +192,7 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: ElevatedButton.icon(
-                    onPressed: _createBackup,
+                    onPressed: isConnected ? _createBackup : null,
                     icon: const Icon(Icons.save),
                     label: Text(l10n.createNewBackup),
                     style: ElevatedButton.styleFrom(
@@ -178,7 +217,7 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
                               title: Text(name),
                               subtitle: Text(date),
                               trailing: ElevatedButton(
-                                onPressed: () => _restoreBackup(file),
+                                onPressed: isConnected ? () => _restoreBackup(file) : null,
                                 child: Text(l10n.restore),
                               ),
                             );

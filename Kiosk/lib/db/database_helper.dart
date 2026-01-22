@@ -88,6 +88,11 @@ class DatabaseHelper {
     return maps.map((json) => Product.fromJson(json)).toList();
   }
 
+  Future<void> clearProducts() async {
+    final db = await instance.database;
+    await db.delete('products');
+  }
+
   // Order Methods
   Future<void> insertOrder(Order order) async {
     final db = await instance.database;

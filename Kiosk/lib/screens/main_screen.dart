@@ -8,6 +8,7 @@ import 'package:kiosk/screens/settings_screen.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
 import 'package:kiosk/config/store_config.dart';
+import 'package:kiosk/services/restore_notifier.dart';
 
 // Helper class for cart items
 class CartItem {
@@ -83,6 +84,7 @@ class _MainScreenState extends State<MainScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
   final Map<String, CartItem> _cartItems = {}; // Use Map for O(1) lookups
   bool _isProcessing = false;
+  final RestoreNotifier _restoreNotifier = RestoreNotifier.instance;
   
   // Use the front camera as requested.
   final MobileScannerController _scannerController = MobileScannerController(
@@ -107,8 +109,15 @@ class _MainScreenState extends State<MainScreen> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    _restoreNotifier.addListener(_handleRestore);
+  }
+
+  @override
   void dispose() {
     _scannerController.dispose();
+    _restoreNotifier.removeListener(_handleRestore);
     super.dispose();
   }
 
@@ -141,6 +150,18 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _cartItems.clear();
     });
+  }
+
+  void _handleRestore() {
+    if (!mounted) return;
+    _clearCart();
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.restoreComplete),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _handleBarcodeDetect(BarcodeCapture capture) async {

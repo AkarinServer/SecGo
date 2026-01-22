@@ -62,5 +62,18 @@
   "pairingKiosk": "Pairing with kiosk at {ip}...",
   "pairFailed": "Pairing failed",
   "pairSuccess": "Kiosk paired successfully",
-  "scanKioskHint": "Scan the QR code on the Kiosk Settings screen"
+  "scanKioskHint": "Scan the QR code on the Kiosk Settings screen",
+  "delete": "Delete",
+  "deleteProductTitle": "Delete Product",
+  "deleteProductMessage": "Delete {name}?",
+  "deleteSuccess": "Product deleted",
+  "deleteFailed": "Failed to delete product",
+  "deleteSyncFailed": "Product deleted, but sync to kiosk failed.",
+  "connectKioskToUpload": "Connect to a kiosk to upload the QR code.",
+  "restoreFailedWithReason": "Restore failed: {reason}",
+  "enterPinPrompt": "Enter PIN to pair",
+  "enterPinTitle": "Enter PIN",
+  "enterPinHint": "Kiosk PIN",
+  "pinLength": "PIN must be at least 4 digits",
+  "confirm": "Confirm"
 }
