@@ -73,10 +73,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 _MenuButton(
                   icon: Icons.qr_code_2,
                   label: l10n.uploadQr,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const QrUploadScreen()),
-                  ),
+                  onTap: isConnected
+                      ? () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const QrUploadScreen()),
+                          )
+                      : null,
                 ),
                 const SizedBox(height: 20),
                 _MenuButton(

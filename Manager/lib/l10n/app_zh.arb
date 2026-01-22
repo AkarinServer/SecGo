@@ -62,5 +62,18 @@
   "pairingKiosk": "正在与终端 {ip} 配对...",
   "pairFailed": "配对失败",
   "pairSuccess": "终端配对成功",
-  "scanKioskHint": "请扫描自助终端设置页面上的二维码"
+  "scanKioskHint": "请扫描自助终端设置页面上的二维码",
+  "delete": "删除",
+  "deleteProductTitle": "删除商品",
+  "deleteProductMessage": "确定要删除{name}吗？",
+  "deleteSuccess": "商品已删除",
+  "deleteFailed": "删除失败",
+  "deleteSyncFailed": "商品已删除，但同步到自助终端失败。",
+  "connectKioskToUpload": "请先连接自助终端后再上传二维码。",
+  "restoreFailedWithReason": "恢复失败：{reason}",
+  "enterPinPrompt": "请输入PIN以完成配对",
+  "enterPinTitle": "输入PIN",
+  "enterPinHint": "终端PIN",
+  "pinLength": "PIN至少4位",
+  "confirm": "确认"
 }

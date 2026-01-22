@@ -9,6 +9,7 @@ import 'package:kiosk/screens/pin_setup_screen.dart';
 import 'package:kiosk/services/settings_service.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,11 @@ void main() {
     await Hive.initFlutter();
     if (!Hive.isAdapterRegistered(0)) {
       Hive.registerAdapter(ProductAdapter());
+    }
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (e) {
+      debugPrint('Warning: .env not loaded: $e');
     }
     settingsService = SettingsService();
     await settingsService.init();

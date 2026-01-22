@@ -47,5 +47,5 @@
   "retry": "Retry",
   "serverNoIp": "Failed to start server: No IP address found",
   "restoreComplete": "Restore Complete",
-  "returningHome": "Returning to the start screen..."
+  "returningHome": "Refreshing data..."
 }

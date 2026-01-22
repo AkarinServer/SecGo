@@ -39,7 +39,7 @@
   "retry": "重试",
   "serverNoIp": "启动服务失败：未找到IP地址",
   "restoreComplete": "恢复完成",
-  "returningHome": "正在返回初始界面...",
+  "returningHome": "正在刷新数据...",
   "setupPin": "设置管理员PIN码",
   "setAdminPin": "设置管理员PIN码",
   "pinDescription": "此PIN码将用于访问设置和连接管理应用。",

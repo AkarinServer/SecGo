@@ -77,12 +77,17 @@ class TestService {
 
       // 2. Restore Backup
       debugPrint('TEST_INFO: Restoring backup');
-      final restoreSuccess = await _kioskService.restoreBackup(kiosk.ip, kiosk.port, kiosk.pin, File(filePath));
+      final restoreResult = await _kioskService.restoreBackup(
+        kiosk.ip,
+        kiosk.port,
+        kiosk.pin,
+        File(filePath),
+      );
 
-      if (restoreSuccess) {
+      if (restoreResult.success) {
         debugPrint('RESTORE_TEST: PASSED');
       } else {
-        debugPrint('RESTORE_TEST: FAILED - Restore call returned false');
+        debugPrint('RESTORE_TEST: FAILED - ${restoreResult.message}');
       }
 
     } catch (e) {

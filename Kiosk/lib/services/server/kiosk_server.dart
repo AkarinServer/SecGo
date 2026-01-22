@@ -116,8 +116,14 @@ class KioskServerService {
     // Endpoint: Sync Products (Push from Manager)
     router.post('/sync/products', (Request request) async {
       try {
+        final syncMode = request.headers['X-Sync-Mode']?.toLowerCase();
         final payload = await request.readAsString();
-        final List<dynamic> productsJson = jsonDecode(payload);
+        final List<dynamic> productsJson =
+            payload.isNotEmpty ? jsonDecode(payload) as List<dynamic> : <dynamic>[];
+
+        if (syncMode == 'replace') {
+          await DatabaseHelper.instance.clearProducts();
+        }
         
         for (var p in productsJson) {
           await DatabaseHelper.instance.upsertProduct(Product.fromJson(p));
