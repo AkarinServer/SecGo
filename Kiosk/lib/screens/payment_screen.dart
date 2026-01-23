@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:kiosk/services/alipay_payment_watch_service.dart';
+import 'package:kiosk/services/payment_notification_watch_service.dart';
 import 'package:kiosk/services/android_notification_listener_service.dart';
 import 'package:kiosk/services/settings_service.dart';
 // import 'package:qr_flutter/qr_flutter.dart';

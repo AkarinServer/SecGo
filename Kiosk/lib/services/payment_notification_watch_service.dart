@@ -4,26 +4,26 @@ import 'package:flutter/foundation.dart';
 import 'package:kiosk/db/database_helper.dart';
 import 'package:kiosk/services/android_notification_listener_service.dart';
 
-class AlipayPaymentWatchResult {
+class PaymentNotificationWatchResult {
   final bool matched;
   final bool timedOut;
   final bool amountMismatched;
   final String? mismatchText;
 
-  const AlipayPaymentWatchResult._({
+  const PaymentNotificationWatchResult._({
     required this.matched,
     required this.timedOut,
     required this.amountMismatched,
     this.mismatchText,
   });
 
-  const AlipayPaymentWatchResult.matched()
+  const PaymentNotificationWatchResult.matched()
       : this._(matched: true, timedOut: false, amountMismatched: false);
 
-  const AlipayPaymentWatchResult.timedOut()
+  const PaymentNotificationWatchResult.timedOut()
       : this._(matched: false, timedOut: true, amountMismatched: false);
 
-  const AlipayPaymentWatchResult.amountMismatched(String text)
+  const PaymentNotificationWatchResult.amountMismatched(String text)
       : this._(
           matched: false,
           timedOut: false,
@@ -295,20 +295,5 @@ class PaymentNotificationWatchService {
       return int.parse('$intPart$frac2');
     }
     return null;
-  }
-
-  static int? parseSuccessAmountFen(String s) {
-    return parseAlipaySuccessAmountFen(s);
-  }
-}
-
-class AlipayPaymentWatchService extends PaymentNotificationWatchService {
-  AlipayPaymentWatchService({
-    super.androidNotificationListenerService,
-    super.databaseHelper,
-  });
-
-  static int? parseSuccessAmountFen(String s) {
-    return PaymentNotificationWatchService.parseAlipaySuccessAmountFen(s);
   }
 }
