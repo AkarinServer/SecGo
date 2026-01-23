@@ -98,4 +98,16 @@ class KioskConnectionService extends ChangeNotifier {
   
   // Force refresh
   Future<void> refresh() => _refreshConnections();
+
+  Future<Map<String, dynamic>?> fetchConnectedKioskAlipayNotificationState() async {
+    final kiosk = connectedKiosk;
+    if (kiosk == null) return null;
+    return _kioskService.fetchAlipayNotificationState(kiosk.ip, kiosk.port, kiosk.pin);
+  }
+
+  Future<Map<String, dynamic>?> fetchConnectedKioskLatestAlipayNotification() async {
+    final kiosk = connectedKiosk;
+    if (kiosk == null) return null;
+    return _kioskService.fetchLatestAlipayNotification(kiosk.ip, kiosk.port, kiosk.pin);
+  }
 }

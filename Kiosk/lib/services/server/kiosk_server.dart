@@ -11,6 +11,7 @@ import 'package:kiosk/db/database_helper.dart';
 import 'package:kiosk/models/product.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
+import 'package:kiosk/services/android_notification_listener_service.dart';
 import 'package:kiosk/services/settings_service.dart';
 
 class KioskServerService {
@@ -22,6 +23,8 @@ class KioskServerService {
   final int _port = 8081;
   String? _deviceId;
   final SettingsService _settingsService = SettingsService();
+  final AndroidNotificationListenerService _notificationListenerService =
+      AndroidNotificationListenerService();
   final VoidCallback? onRestoreComplete;
 
   String? get ipAddress => _ipAddress;
@@ -111,6 +114,36 @@ class KioskServerService {
         'device': 'kiosk',
         'device_id': _deviceId,
       }));
+    });
+
+    router.get('/notifications/alipay', (Request request) async {
+      final state = await _notificationListenerService.getAlipayState();
+      return Response.ok(
+        jsonEncode(state),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
+    router.get('/notifications/alipay/latest', (Request request) async {
+      final latest = await _notificationListenerService.getLatestAlipayNotification();
+      if (latest == null) {
+        return Response.notFound(jsonEncode({'message': 'No Alipay notification captured'}));
+      }
+      return Response.ok(
+        jsonEncode(latest),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
+    router.get('/notifications/alipay/payment/latest', (Request request) async {
+      final latest = await _notificationListenerService.getLatestAlipayPaymentNotification();
+      if (latest == null) {
+        return Response.notFound(jsonEncode({'message': 'No Alipay payment notification captured'}));
+      }
+      return Response.ok(
+        jsonEncode(latest),
+        headers: {'Content-Type': 'application/json'},
+      );
     });
 
     // Endpoint: Sync Products (Push from Manager)

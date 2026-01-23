@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Add intl for date formatting
 import 'package:kiosk/db/database_helper.dart';
@@ -9,6 +11,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
 import 'package:kiosk/config/store_config.dart';
 import 'package:kiosk/services/restore_notifier.dart';
+import 'package:kiosk/services/android_notification_listener_service.dart';
 
 // Helper class for cart items
 class CartItem {
@@ -85,6 +88,8 @@ class _MainScreenState extends State<MainScreen> {
   final Map<String, CartItem> _cartItems = {}; // Use Map for O(1) lookups
   bool _isProcessing = false;
   final RestoreNotifier _restoreNotifier = RestoreNotifier.instance;
+  final AndroidNotificationListenerService _notificationListenerService =
+      AndroidNotificationListenerService();
   
   // Use the front camera as requested.
   final MobileScannerController _scannerController = MobileScannerController(
@@ -112,6 +117,9 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _restoreNotifier.addListener(_handleRestore);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _resumePendingPaymentIfAny();
+    });
   }
 
   @override
@@ -160,6 +168,38 @@ class _MainScreenState extends State<MainScreen> {
       SnackBar(
         content: Text(l10n.restoreComplete),
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _resumePendingPaymentIfAny() async {
+    if (!mounted) return;
+    final pending = await _db.getLatestPendingAlipayOrder();
+    if (pending == null) return;
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentScreen(
+          totalAmount: pending.totalAmount,
+          orderId: pending.id,
+          checkoutTimeMs: pending.alipayCheckoutTimeMs ?? pending.timestamp,
+          baselineKeys: const [],
+          autoConfirmEnabled: true,
+          onPaymentConfirmed: () {
+            if (!mounted) return;
+            final l10n = AppLocalizations.of(context)!;
+            final navigator = Navigator.of(context);
+            final messenger = ScaffoldMessenger.of(context);
+            navigator.popUntil((route) => route.isFirst);
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(l10n.paymentSuccess),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -252,8 +292,11 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _processPayment() async {
     if (_cartItems.isEmpty) return;
+    if (_isProcessing) return;
+    _isProcessing = true;
+    final checkoutTimeMs = DateTime.now().millisecondsSinceEpoch;
     final order = model.Order(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: checkoutTimeMs.toString(),
       items: _cartItems.values
           .map((item) => model.OrderItem(
                 barcode: item.product.barcode,
@@ -263,14 +306,81 @@ class _MainScreenState extends State<MainScreen> {
               ))
           .toList(),
       totalAmount: _totalAmount,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
+      timestamp: checkoutTimeMs,
+      alipayCheckoutTimeMs: checkoutTimeMs,
     );
+
+    var autoConfirmEnabled = false;
+    var baselineKeys = <String>{};
+
+    if (Platform.isAndroid) {
+      autoConfirmEnabled = await _notificationListenerService.isEnabled();
+      if (!autoConfirmEnabled && mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        final action = await showDialog<String>(
+          context: context,
+          barrierDismissible: true,
+          builder: (context) {
+            return AlertDialog(
+              title: Text(l10n.payment),
+              content: const Text(
+                'Auto-confirm requires Notification Access. Enable it to confirm Alipay payment automatically.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, 'continue'),
+                  child: Text(l10n.confirm),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, 'open'),
+                  child: const Text('Open Settings'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, 'retry'),
+                  child: const Text('Retry'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (action == 'open') {
+          await _notificationListenerService.openSettings();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Enable notification access, then tap Retry.')),
+            );
+          }
+          autoConfirmEnabled = await _notificationListenerService.isEnabled();
+        } else if (action == 'retry') {
+          autoConfirmEnabled = await _notificationListenerService.isEnabled();
+        } else {
+          autoConfirmEnabled = false;
+        }
+      }
+
+      if (autoConfirmEnabled) {
+        final snapshot = await _notificationListenerService.getActiveAlipayNotificationsSnapshot();
+        for (final n in snapshot) {
+          final key = n['key'];
+          final postTime = n['postTime'];
+          if (key is! String || key.isEmpty) continue;
+          if (postTime is int && postTime > checkoutTimeMs) continue;
+          baselineKeys.add(key);
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Auto confirmation unavailable. Manual confirmation required.')),
+        );
+      }
+    }
 
     try {
       await _db.insertOrder(order);
     } catch (e) {
       debugPrint('Failed to save order: $e');
     }
+    _isProcessing = false;
 
     if (!mounted) return;
     Navigator.push(
@@ -278,6 +388,10 @@ class _MainScreenState extends State<MainScreen> {
       MaterialPageRoute(
         builder: (_) => PaymentScreen(
           totalAmount: _totalAmount,
+          orderId: order.id,
+          checkoutTimeMs: checkoutTimeMs,
+          baselineKeys: baselineKeys.toList(),
+          autoConfirmEnabled: autoConfirmEnabled,
           onPaymentConfirmed: () {
             final l10n = AppLocalizations.of(context)!;
             final navigator = Navigator.of(context);

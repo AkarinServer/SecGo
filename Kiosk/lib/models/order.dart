@@ -38,6 +38,13 @@ class Order {
   final double totalAmount;
   final int timestamp;
   final bool synced;
+  final int? alipayCheckoutTimeMs;
+  final bool alipayNotifyCheckedAmount;
+  final String? alipayMatchedKey;
+  final int? alipayMatchedPostTimeMs;
+  final String? alipayMatchedTitle;
+  final String? alipayMatchedText;
+  final int? alipayMatchedParsedAmountFen;
 
   Order({
     required this.id,
@@ -45,6 +52,13 @@ class Order {
     required this.totalAmount,
     required this.timestamp,
     this.synced = false,
+    this.alipayCheckoutTimeMs,
+    this.alipayNotifyCheckedAmount = false,
+    this.alipayMatchedKey,
+    this.alipayMatchedPostTimeMs,
+    this.alipayMatchedTitle,
+    this.alipayMatchedText,
+    this.alipayMatchedParsedAmountFen,
   });
 
   Map<String, dynamic> toMap() {
@@ -54,6 +68,13 @@ class Order {
       'total_amount': totalAmount,
       'timestamp': timestamp,
       'synced': synced ? 1 : 0,
+      'alipay_checkout_time_ms': alipayCheckoutTimeMs,
+      'alipay_notify_checked_amount': alipayNotifyCheckedAmount ? 1 : 0,
+      'alipay_matched_key': alipayMatchedKey,
+      'alipay_matched_post_time_ms': alipayMatchedPostTimeMs,
+      'alipay_matched_title': alipayMatchedTitle,
+      'alipay_matched_text': alipayMatchedText,
+      'alipay_matched_parsed_amount_fen': alipayMatchedParsedAmountFen,
     };
   }
 
@@ -66,6 +87,13 @@ class Order {
       totalAmount: (map['total_amount'] as num).toDouble(),
       timestamp: map['timestamp'],
       synced: (map['synced'] as int) == 1,
+      alipayCheckoutTimeMs: map['alipay_checkout_time_ms'],
+      alipayNotifyCheckedAmount: (map['alipay_notify_checked_amount'] ?? 0) == 1,
+      alipayMatchedKey: map['alipay_matched_key'],
+      alipayMatchedPostTimeMs: map['alipay_matched_post_time_ms'],
+      alipayMatchedTitle: map['alipay_matched_title'],
+      alipayMatchedText: map['alipay_matched_text'],
+      alipayMatchedParsedAmountFen: map['alipay_matched_parsed_amount_fen'],
     );
   }
 
@@ -76,6 +104,13 @@ class Order {
       'total_amount': totalAmount,
       'timestamp': timestamp,
       'synced': synced,
+      'alipay_checkout_time_ms': alipayCheckoutTimeMs,
+      'alipay_notify_checked_amount': alipayNotifyCheckedAmount,
+      'alipay_matched_key': alipayMatchedKey,
+      'alipay_matched_post_time_ms': alipayMatchedPostTimeMs,
+      'alipay_matched_title': alipayMatchedTitle,
+      'alipay_matched_text': alipayMatchedText,
+      'alipay_matched_parsed_amount_fen': alipayMatchedParsedAmountFen,
     };
   }
 }

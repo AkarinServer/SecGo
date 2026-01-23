@@ -49,6 +49,56 @@ class KioskClientService {
     }
   }
 
+  Future<Map<String, dynamic>?> fetchAlipayNotificationState(
+    String ip,
+    int port,
+    String pin,
+  ) async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse('http://$ip:$port/notifications/alipay'),
+            headers: {
+              'Authorization': 'Bearer $pin',
+            },
+          )
+          .timeout(const Duration(seconds: 2));
+
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body);
+      if (data is! Map) return null;
+      return Map<String, dynamic>.from(data);
+    } catch (e) {
+      debugPrint('Error fetching Alipay notification state: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchLatestAlipayNotification(
+    String ip,
+    int port,
+    String pin,
+  ) async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse('http://$ip:$port/notifications/alipay/latest'),
+            headers: {
+              'Authorization': 'Bearer $pin',
+            },
+          )
+          .timeout(const Duration(seconds: 2));
+
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body);
+      if (data is! Map) return null;
+      return Map<String, dynamic>.from(data);
+    } catch (e) {
+      debugPrint('Error fetching latest Alipay notification: $e');
+      return null;
+    }
+  }
+
   Future<bool> syncProductsToKiosk(String ip, int port, String pin) async {
     return await bidirectionalSync(ip, port, pin);
   }
