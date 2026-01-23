@@ -182,8 +182,6 @@ class PaymentNotificationWatchService {
     if (seenPostTime != null && postTime <= seenPostTime) return;
     _seenMaxPostTimeByKey[providerKey] = postTime;
 
-    if (baselineKeys.contains(providerKey)) return;
-
     final title = _toStrOrNull(notification['title']);
     final text = _toStrOrNull(notification['text']);
     final bigText = _toStrOrNull(notification['bigText']);
