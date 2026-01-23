@@ -31,6 +31,7 @@
   "barcodeRequired": "请输入条形码",
   "nameRequired": "请输入商品名称",
   "priceRequired": "请输入价格",
+  "priceInvalid": "请输入正确的价格（最多两位小数）",
   "backupRestore": "备份与恢复",
   "createNewBackup": "创建新备份",
   "noBackupsFound": "未找到备份",
@@ -76,5 +77,19 @@
   "enterPinTitle": "输入PIN",
   "enterPinHint": "终端PIN",
   "pinLength": "PIN至少4位",
-  "confirm": "确认"
+  "confirm": "确认",
+  "payMethodLabel": "支付方式：{method}",
+  "paymentMethodAlipay": "支付宝",
+  "paymentMethodWechat": "微信",
+  "paymentMethodPending": "待确认",
+  "manualPair": "手动配对",
+  "ipLabel": "IP",
+  "portLabel": "端口",
+  "addAlipayQr": "添加支付宝二维码",
+  "addWechatQr": "添加微信二维码",
+  "addCustomQr": "添加自定义二维码",
+  "customPaymentMethodTitle": "自定义支付方式",
+  "customPaymentMethodHint": "例如：bank_xyz",
+  "customPaymentMethodInvalid": "请输入名称",
+  "uploadedPaymentQrs": "已上传 {count} 个支付二维码"
 }

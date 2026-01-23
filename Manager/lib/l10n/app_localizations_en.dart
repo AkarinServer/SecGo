@@ -111,6 +111,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get priceRequired => 'Please enter price';
 
   @override
+  String get priceInvalid => 'Please enter a valid price (max 2 decimals)';
+
+  @override
   String get backupRestore => 'Backup & Restore';
 
   @override
@@ -267,4 +270,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirm => 'Confirm';
+
+  @override
+  String payMethodLabel(Object method) {
+    return 'Pay: $method';
+  }
+
+  @override
+  String get paymentMethodAlipay => 'Alipay';
+
+  @override
+  String get paymentMethodWechat => 'WeChat';
+
+  @override
+  String get paymentMethodPending => 'Pending';
+
+  @override
+  String get manualPair => 'Manual Pair';
+
+  @override
+  String get ipLabel => 'IP';
+
+  @override
+  String get portLabel => 'Port';
+
+  @override
+  String get addAlipayQr => 'Add Alipay QR';
+
+  @override
+  String get addWechatQr => 'Add WeChat QR';
+
+  @override
+  String get addCustomQr => 'Add Custom QR';
+
+  @override
+  String get customPaymentMethodTitle => 'Custom payment method';
+
+  @override
+  String get customPaymentMethodHint => 'e.g. bank_xyz';
+
+  @override
+  String get customPaymentMethodInvalid => 'Please enter a name';
+
+  @override
+  String uploadedPaymentQrs(Object count) {
+    return 'Uploaded $count payment QRs';
+  }
 }

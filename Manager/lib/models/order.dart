@@ -27,6 +27,8 @@ class Order {
   final double totalAmount;
   final int timestamp;
   final bool synced;
+  final bool alipayNotifyCheckedAmount;
+  final bool wechatNotifyCheckedAmount;
 
   Order({
     required this.id,
@@ -34,9 +36,22 @@ class Order {
     required this.totalAmount,
     required this.timestamp,
     this.synced = false,
+    this.alipayNotifyCheckedAmount = false,
+    this.wechatNotifyCheckedAmount = false,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
+    bool asBool(Object? v) {
+      if (v == null) return false;
+      if (v is bool) return v;
+      if (v is num) return v != 0;
+      final s = v.toString().trim().toLowerCase();
+      if (s == 'true') return true;
+      final n = num.tryParse(s);
+      if (n != null) return n != 0;
+      return false;
+    }
+
     return Order(
       id: json['id'],
       items: (json['items'] as List)
@@ -45,6 +60,8 @@ class Order {
       totalAmount: (json['total_amount'] as num).toDouble(),
       timestamp: json['timestamp'],
       synced: json['synced'] == true || json['synced'] == 1,
+      alipayNotifyCheckedAmount: asBool(json['alipay_notify_checked_amount']),
+      wechatNotifyCheckedAmount: asBool(json['wechat_notify_checked_amount']),
     );
   }
 }
