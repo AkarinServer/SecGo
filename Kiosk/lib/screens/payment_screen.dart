@@ -31,7 +31,7 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   final SettingsService _settingsService = SettingsService();
-  final AlipayPaymentWatchService _watchService = AlipayPaymentWatchService();
+  final PaymentNotificationWatchService _watchService = PaymentNotificationWatchService();
   final AndroidNotificationListenerService _notificationListenerService =
       AndroidNotificationListenerService();
   String? _qrData;
@@ -52,13 +52,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final enabled = await _notificationListenerService.isEnabled();
     if (!enabled) return;
     final baseline = widget.baselineKeys.toSet();
-    final snapshot = await _notificationListenerService.getActiveAlipayNotificationsSnapshot();
-    for (final n in snapshot) {
+    final alipaySnapshot = await _notificationListenerService.getActiveAlipayNotificationsSnapshot();
+    for (final n in alipaySnapshot) {
       final key = n['key'];
       final postTime = n['postTime'];
+      final packageName = n['package'];
+      if (packageName is! String || packageName.isEmpty) continue;
       if (key is! String || key.isEmpty) continue;
       if (postTime is int && postTime <= widget.checkoutTimeMs) {
-        baseline.add(key);
+        baseline.add('$packageName|$key');
+      }
+    }
+    final wechatSnapshot = await _notificationListenerService.getActiveWechatNotificationsSnapshot();
+    for (final n in wechatSnapshot) {
+      final key = n['key'];
+      final postTime = n['postTime'];
+      final packageName = n['package'];
+      if (packageName is! String || packageName.isEmpty) continue;
+      if (key is! String || key.isEmpty) continue;
+      if (postTime is int && postTime <= widget.checkoutTimeMs) {
+        baseline.add('$packageName|$key');
       }
     }
     debugPrint(

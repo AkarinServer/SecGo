@@ -32,8 +32,11 @@ class AlipayPaymentWatchResult {
         );
 }
 
-class AlipayPaymentWatchService {
-  AlipayPaymentWatchService({
+class PaymentNotificationWatchService {
+  static const String alipayPackage = 'com.eg.android.AlipayGphone';
+  static const String wechatPackage = 'com.tencent.mm';
+
+  PaymentNotificationWatchService({
     AndroidNotificationListenerService? androidNotificationListenerService,
     DatabaseHelper? databaseHelper,
   })  : _notificationListenerService =
@@ -63,13 +66,16 @@ class AlipayPaymentWatchService {
   }
 
   Future<Set<String>> buildBaselineKeys() async {
-    final snapshot = await _notificationListenerService.getActiveAlipayNotificationsSnapshot();
     final keys = <String>{};
-    for (final n in snapshot) {
+    final alipaySnapshot = await _notificationListenerService.getActiveAlipayNotificationsSnapshot();
+    final wechatSnapshot = await _notificationListenerService.getActiveWechatNotificationsSnapshot();
+    for (final n in alipaySnapshot) {
       final key = n['key'];
-      if (key is String && key.isNotEmpty) {
-        keys.add(key);
-      }
+      if (key is String && key.isNotEmpty) keys.add(buildProviderKey(alipayPackage, key));
+    }
+    for (final n in wechatSnapshot) {
+      final key = n['key'];
+      if (key is String && key.isNotEmpty) keys.add(buildProviderKey(wechatPackage, key));
     }
     return keys;
   }
@@ -88,12 +94,12 @@ class AlipayPaymentWatchService {
 
     final expectedFen = _amountToFen(orderAmount);
     debugPrint(
-      'AlipayWatch start orderId=$orderId expectedFen=$expectedFen checkoutTimeMs=$checkoutTimeMs baselineKeys=${baselineKeys.length}',
+      'PaymentWatch start orderId=$orderId expectedFen=$expectedFen checkoutTimeMs=$checkoutTimeMs baselineKeys=${baselineKeys.length}',
     );
     _timeoutTimer = Timer(const Duration(minutes: 5), () async {
       if (!_active) return;
       await stop();
-      debugPrint('AlipayWatch timeout orderId=$orderId');
+      debugPrint('PaymentWatch timeout orderId=$orderId');
       onTimeout();
     });
 
@@ -119,8 +125,23 @@ class AlipayPaymentWatchService {
 
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (!_active) return;
-      final snapshot = await _notificationListenerService.getActiveAlipayNotificationsSnapshot();
-      for (final n in snapshot) {
+      final alipaySnapshot =
+          await _notificationListenerService.getActiveAlipayNotificationsSnapshot();
+      for (final n in alipaySnapshot) {
+        if (!_active) return;
+        await _evaluateNotification(
+          notification: n,
+          expectedFen: expectedFen,
+          orderId: orderId,
+          checkoutTimeMs: checkoutTimeMs,
+          baselineKeys: baselineKeys,
+          onMatched: onMatched,
+          onMismatch: onMismatch,
+        );
+      }
+      final wechatSnapshot =
+          await _notificationListenerService.getActiveWechatNotificationsSnapshot();
+      for (final n in wechatSnapshot) {
         if (!_active) return;
         await _evaluateNotification(
           notification: n,
@@ -146,32 +167,34 @@ class AlipayPaymentWatchService {
   }) async {
     if (!_active) return;
     final packageName = notification['package'];
-    if (packageName != 'com.eg.android.AlipayGphone') return;
+    if (packageName != alipayPackage && packageName != wechatPackage) return;
+    final providerPackage = packageName as String;
 
     final key = notification['key'];
     if (key is! String || key.isEmpty) return;
+    final providerKey = buildProviderKey(providerPackage, key);
 
     final postTime = notification['postTime'];
     if (postTime is! int) return;
     if (postTime <= checkoutTimeMs) return;
 
-    final seenPostTime = _seenMaxPostTimeByKey[key];
+    final seenPostTime = _seenMaxPostTimeByKey[providerKey];
     if (seenPostTime != null && postTime <= seenPostTime) return;
-    _seenMaxPostTimeByKey[key] = postTime;
+    _seenMaxPostTimeByKey[providerKey] = postTime;
 
-    if (baselineKeys.contains(key)) return;
+    if (baselineKeys.contains(providerKey)) return;
 
     final title = _toStrOrNull(notification['title']);
     final text = _toStrOrNull(notification['text']);
     final bigText = _toStrOrNull(notification['bigText']);
     final combined = [title, text, bigText].whereType<String>().join(' ');
-    if (!combined.contains('成功收款')) return;
-
-    final parsedFen = parseSuccessAmountFen(combined);
+    final parsedFen = providerPackage == alipayPackage
+        ? parseAlipaySuccessAmountFen(combined)
+        : parseWeChatSuccessAmountFen(combined);
     if (parsedFen == null) {
-      if (_loggedParseFailureKeys.add(key)) {
+      if (_loggedParseFailureKeys.add(providerKey)) {
         debugPrint(
-          'AlipayWatch parseFailed orderId=$orderId key=$key postTime=$postTime combined=$combined',
+          'PaymentWatch parseFailed orderId=$orderId provider=$providerPackage key=$key postTime=$postTime combined=$combined',
         );
       }
       return;
@@ -179,30 +202,48 @@ class AlipayPaymentWatchService {
 
     if (parsedFen != expectedFen) {
       debugPrint(
-        'AlipayWatch mismatch orderId=$orderId key=$key postTime=$postTime expectedFen=$expectedFen parsedFen=$parsedFen text=${text ?? bigText ?? ""}',
+        'PaymentWatch mismatch orderId=$orderId provider=$providerPackage key=$key postTime=$postTime expectedFen=$expectedFen parsedFen=$parsedFen text=${text ?? bigText ?? ""}',
       );
       onMismatch('mismatch: expectedFen=$expectedFen parsedFen=$parsedFen');
       return;
     }
 
-    final used = await _db.isAlipayNotificationKeyAlreadyUsed(key);
+    final used = providerPackage == alipayPackage
+        ? await _db.isAlipayNotificationKeyAlreadyUsed(key)
+        : await _db.isWechatNotificationKeyAlreadyUsed(key);
     if (used) return;
 
     debugPrint(
-      'AlipayWatch matched orderId=$orderId key=$key postTime=$postTime fen=$parsedFen',
+      'PaymentWatch matched orderId=$orderId provider=$providerPackage key=$key postTime=$postTime fen=$parsedFen',
     );
-    await _db.updateOrderAlipayMatch(
-      orderId: orderId,
-      checkoutTimeMs: checkoutTimeMs,
-      matchedKey: key,
-      matchedPostTimeMs: postTime,
-      matchedTitle: title,
-      matchedText: text ?? bigText,
-      matchedParsedAmountFen: parsedFen,
-    );
+    if (providerPackage == alipayPackage) {
+      await _db.updateOrderAlipayMatch(
+        orderId: orderId,
+        checkoutTimeMs: checkoutTimeMs,
+        matchedKey: key,
+        matchedPostTimeMs: postTime,
+        matchedTitle: title,
+        matchedText: text ?? bigText,
+        matchedParsedAmountFen: parsedFen,
+      );
+    } else {
+      await _db.updateOrderWechatMatch(
+        orderId: orderId,
+        checkoutTimeMs: checkoutTimeMs,
+        matchedKey: key,
+        matchedPostTimeMs: postTime,
+        matchedTitle: title,
+        matchedText: text ?? bigText,
+        matchedParsedAmountFen: parsedFen,
+      );
+    }
 
     await stop();
     onMatched();
+  }
+
+  static String buildProviderKey(String packageName, String key) {
+    return '$packageName|$key';
   }
 
   static String? _toStrOrNull(Object? v) {
@@ -226,7 +267,7 @@ class AlipayPaymentWatchService {
     return int.parse(fenStr);
   }
 
-  static int? parseSuccessAmountFen(String s) {
+  static int? parseAlipaySuccessAmountFen(String s) {
     final m = RegExp(r'成功收款\s*[¥￥]?\s*([0-9][0-9,]*)(?:\.([0-9]{1,2}))?\s*元')
         .firstMatch(s);
     if (m == null) return null;
@@ -235,5 +276,39 @@ class AlipayPaymentWatchService {
     final frac = m.group(2) ?? '';
     final frac2 = '${frac}00'.substring(0, 2);
     return int.parse('$intPart$frac2');
+  }
+
+  static int? parseWeChatSuccessAmountFen(String s) {
+    final patterns = <RegExp>[
+      RegExp(r'收款\s*到账\s*[¥￥]\s*([0-9][0-9,]*)(?:\.([0-9]{1,2}))?'),
+      RegExp(
+        r'(?:微信支付)?\s*收款\s*(?:到账)?\s*[¥￥]?\s*([0-9][0-9,]*)(?:\.([0-9]{1,2}))?\s*(?:元)?',
+      ),
+    ];
+    for (final p in patterns) {
+      final m = p.firstMatch(s);
+      if (m == null) continue;
+      final intPart = (m.group(1) ?? '').replaceAll(',', '');
+      if (intPart.isEmpty) continue;
+      final frac = m.group(2) ?? '';
+      final frac2 = '${frac}00'.substring(0, 2);
+      return int.parse('$intPart$frac2');
+    }
+    return null;
+  }
+
+  static int? parseSuccessAmountFen(String s) {
+    return parseAlipaySuccessAmountFen(s);
+  }
+}
+
+class AlipayPaymentWatchService extends PaymentNotificationWatchService {
+  AlipayPaymentWatchService({
+    super.androidNotificationListenerService,
+    super.databaseHelper,
+  });
+
+  static int? parseSuccessAmountFen(String s) {
+    return PaymentNotificationWatchService.parseAlipaySuccessAmountFen(s);
   }
 }

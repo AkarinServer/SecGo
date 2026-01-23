@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -53,7 +53,14 @@ class DatabaseHelper {
         alipay_matched_post_time_ms INTEGER,
         alipay_matched_title TEXT,
         alipay_matched_text TEXT,
-        alipay_matched_parsed_amount_fen INTEGER
+        alipay_matched_parsed_amount_fen INTEGER,
+        wechat_notify_checked_amount INTEGER NOT NULL DEFAULT 0,
+        wechat_checkout_time_ms INTEGER,
+        wechat_matched_key TEXT,
+        wechat_matched_post_time_ms INTEGER,
+        wechat_matched_title TEXT,
+        wechat_matched_text TEXT,
+        wechat_matched_parsed_amount_fen INTEGER
       )
     ''');
   }
@@ -74,6 +81,17 @@ class DatabaseHelper {
       await db.execute('ALTER TABLE orders ADD COLUMN alipay_matched_title TEXT');
       await db.execute('ALTER TABLE orders ADD COLUMN alipay_matched_text TEXT');
       await db.execute('ALTER TABLE orders ADD COLUMN alipay_matched_parsed_amount_fen INTEGER');
+    }
+    if (oldVersion < 4) {
+      await db.execute(
+        'ALTER TABLE orders ADD COLUMN wechat_notify_checked_amount INTEGER NOT NULL DEFAULT 0',
+      );
+      await db.execute('ALTER TABLE orders ADD COLUMN wechat_checkout_time_ms INTEGER');
+      await db.execute('ALTER TABLE orders ADD COLUMN wechat_matched_key TEXT');
+      await db.execute('ALTER TABLE orders ADD COLUMN wechat_matched_post_time_ms INTEGER');
+      await db.execute('ALTER TABLE orders ADD COLUMN wechat_matched_title TEXT');
+      await db.execute('ALTER TABLE orders ADD COLUMN wechat_matched_text TEXT');
+      await db.execute('ALTER TABLE orders ADD COLUMN wechat_matched_parsed_amount_fen INTEGER');
     }
   }
 
@@ -144,6 +162,23 @@ class DatabaseHelper {
     return order;
   }
 
+  Future<Order?> getLatestPendingWechatOrder({Duration maxAge = const Duration(minutes: 30)}) async {
+    final db = await instance.database;
+    final maps = await db.query(
+      'orders',
+      where: 'wechat_notify_checked_amount = 0 AND wechat_checkout_time_ms IS NOT NULL',
+      orderBy: 'timestamp DESC',
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    final order = Order.fromMap(maps.first);
+    final checkoutTimeMs = order.wechatCheckoutTimeMs;
+    if (checkoutTimeMs == null) return null;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (nowMs - checkoutTimeMs > maxAge.inMilliseconds) return null;
+    return order;
+  }
+
   Future<void> updateOrderAlipayMatch({
     required String orderId,
     required int checkoutTimeMs,
@@ -176,6 +211,44 @@ class DatabaseHelper {
       'orders',
       columns: ['id'],
       where: 'alipay_notify_checked_amount = 1 AND alipay_matched_key = ?',
+      whereArgs: [key],
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
+
+  Future<void> updateOrderWechatMatch({
+    required String orderId,
+    required int checkoutTimeMs,
+    required String matchedKey,
+    required int matchedPostTimeMs,
+    required String? matchedTitle,
+    required String? matchedText,
+    required int matchedParsedAmountFen,
+  }) async {
+    final db = await instance.database;
+    await db.update(
+      'orders',
+      {
+        'wechat_notify_checked_amount': 1,
+        'wechat_checkout_time_ms': checkoutTimeMs,
+        'wechat_matched_key': matchedKey,
+        'wechat_matched_post_time_ms': matchedPostTimeMs,
+        'wechat_matched_title': matchedTitle,
+        'wechat_matched_text': matchedText,
+        'wechat_matched_parsed_amount_fen': matchedParsedAmountFen,
+      },
+      where: 'id = ?',
+      whereArgs: [orderId],
+    );
+  }
+
+  Future<bool> isWechatNotificationKeyAlreadyUsed(String key) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'orders',
+      columns: ['id'],
+      where: 'wechat_notify_checked_amount = 1 AND wechat_matched_key = ?',
       whereArgs: [key],
       limit: 1,
     );

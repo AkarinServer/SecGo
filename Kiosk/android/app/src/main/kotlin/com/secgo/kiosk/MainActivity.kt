@@ -39,6 +39,10 @@ class MainActivity : FlutterActivity() {
         "getLatestAlipayNotification" -> result.success(getLatestAlipayNotification())
         "getLatestAlipayPaymentNotification" -> result.success(getLatestAlipayPaymentNotification())
         "getActiveAlipayNotificationsSnapshot" -> result.success(getActiveAlipayNotificationsSnapshot())
+        "getWechatNotificationState" -> result.success(getWechatNotificationState())
+        "getLatestWechatNotification" -> result.success(getLatestWechatNotification())
+        "getLatestWechatPaymentNotification" -> result.success(getLatestWechatPaymentNotification())
+        "getActiveWechatNotificationsSnapshot" -> result.success(getActiveWechatNotificationsSnapshot())
         "openNotificationListenerSettings" -> {
           startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
           result.success(true)
@@ -57,17 +61,24 @@ class MainActivity : FlutterActivity() {
           when (intent.action) {
             SecgoNotificationListenerService.ACTION_NOTIFICATION_STATE -> {
               val hasAlipay = intent.getBooleanExtra(SecgoNotificationListenerService.KEY_HAS_ALIPAY, false)
+              val hasWechat = intent.getBooleanExtra(SecgoNotificationListenerService.KEY_HAS_WECHAT, false)
               val updatedAt = intent.getLongExtra(SecgoNotificationListenerService.KEY_UPDATED_AT_MS, 0L)
               val latestAlipayJson = intent.getStringExtra(SecgoNotificationListenerService.KEY_LAST_ALIPAY_JSON)
               val latestAlipayPaymentJson =
                 intent.getStringExtra(SecgoNotificationListenerService.KEY_LAST_ALIPAY_PAYMENT_JSON)
+              val latestWechatJson = intent.getStringExtra(SecgoNotificationListenerService.KEY_LAST_WECHAT_JSON)
+              val latestWechatPaymentJson =
+                intent.getStringExtra(SecgoNotificationListenerService.KEY_LAST_WECHAT_PAYMENT_JSON)
               eventSink?.success(
                 mapOf(
                   "type" to "state",
                   "hasAlipay" to hasAlipay,
+                  "hasWechat" to hasWechat,
                   "updatedAtMs" to updatedAt,
                   "alipay" to (parseJsonToMap(latestAlipayJson) ?: emptyMap<String, Any>()),
                   "alipayPayment" to (parseJsonToMap(latestAlipayPaymentJson) ?: emptyMap<String, Any>()),
+                  "wechat" to (parseJsonToMap(latestWechatJson) ?: emptyMap<String, Any>()),
+                  "wechatPayment" to (parseJsonToMap(latestWechatPaymentJson) ?: emptyMap<String, Any>()),
                 ),
               )
             }
@@ -142,6 +153,35 @@ class MainActivity : FlutterActivity() {
   private fun getActiveAlipayNotificationsSnapshot(): List<Map<String, Any>> {
     val prefs = getSharedPreferences(SecgoNotificationListenerService.PREFS_NAME, Context.MODE_PRIVATE)
     val json = prefs.getString(SecgoNotificationListenerService.KEY_ACTIVE_ALIPAY_SNAPSHOT_JSON, null) ?: return emptyList()
+    return parseJsonToListOfMaps(json)
+  }
+
+  private fun getWechatNotificationState(): Map<String, Any> {
+    val prefs = getSharedPreferences(SecgoNotificationListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+    val hasWechat = prefs.getBoolean(SecgoNotificationListenerService.KEY_HAS_WECHAT, false)
+    val updatedAt = prefs.getLong(SecgoNotificationListenerService.KEY_UPDATED_AT_MS, 0L)
+    return mapOf(
+      "enabled" to isNotificationListenerEnabled(),
+      "hasWechat" to hasWechat,
+      "updatedAtMs" to updatedAt,
+    )
+  }
+
+  private fun getLatestWechatNotification(): Map<String, Any>? {
+    val prefs = getSharedPreferences(SecgoNotificationListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+    val json = prefs.getString(SecgoNotificationListenerService.KEY_LAST_WECHAT_JSON, null) ?: return null
+    return parseJsonToMap(json)
+  }
+
+  private fun getLatestWechatPaymentNotification(): Map<String, Any>? {
+    val prefs = getSharedPreferences(SecgoNotificationListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+    val json = prefs.getString(SecgoNotificationListenerService.KEY_LAST_WECHAT_PAYMENT_JSON, null) ?: return null
+    return parseJsonToMap(json)
+  }
+
+  private fun getActiveWechatNotificationsSnapshot(): List<Map<String, Any>> {
+    val prefs = getSharedPreferences(SecgoNotificationListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+    val json = prefs.getString(SecgoNotificationListenerService.KEY_ACTIVE_WECHAT_SNAPSHOT_JSON, null) ?: return emptyList()
     return parseJsonToListOfMaps(json)
   }
 

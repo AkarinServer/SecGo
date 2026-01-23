@@ -308,6 +308,7 @@ class _MainScreenState extends State<MainScreen> {
       totalAmount: _totalAmount,
       timestamp: checkoutTimeMs,
       alipayCheckoutTimeMs: checkoutTimeMs,
+      wechatCheckoutTimeMs: checkoutTimeMs,
     );
 
     var autoConfirmEnabled = false;
@@ -324,7 +325,7 @@ class _MainScreenState extends State<MainScreen> {
             return AlertDialog(
               title: Text(l10n.payment),
               content: const Text(
-                'Auto-confirm requires Notification Access. Enable it to confirm Alipay payment automatically.',
+                'Auto-confirm requires Notification Access. Enable it to confirm payment automatically.',
               ),
               actions: [
                 TextButton(
@@ -360,13 +361,27 @@ class _MainScreenState extends State<MainScreen> {
       }
 
       if (autoConfirmEnabled) {
-        final snapshot = await _notificationListenerService.getActiveAlipayNotificationsSnapshot();
-        for (final n in snapshot) {
+        final alipaySnapshot =
+            await _notificationListenerService.getActiveAlipayNotificationsSnapshot();
+        for (final n in alipaySnapshot) {
           final key = n['key'];
           final postTime = n['postTime'];
+          final packageName = n['package'];
+          if (packageName is! String || packageName.isEmpty) continue;
           if (key is! String || key.isEmpty) continue;
           if (postTime is int && postTime > checkoutTimeMs) continue;
-          baselineKeys.add(key);
+          baselineKeys.add('$packageName|$key');
+        }
+        final wechatSnapshot =
+            await _notificationListenerService.getActiveWechatNotificationsSnapshot();
+        for (final n in wechatSnapshot) {
+          final key = n['key'];
+          final postTime = n['postTime'];
+          final packageName = n['package'];
+          if (packageName is! String || packageName.isEmpty) continue;
+          if (key is! String || key.isEmpty) continue;
+          if (postTime is int && postTime > checkoutTimeMs) continue;
+          baselineKeys.add('$packageName|$key');
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

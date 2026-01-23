@@ -45,6 +45,23 @@ class AndroidNotificationListenerService {
     return state;
   }
 
+  Future<Map<String, dynamic>> getWechatState() async {
+    if (!Platform.isAndroid) {
+      return {
+        'enabled': false,
+        'hasWechat': false,
+        'updatedAtMs': 0,
+      };
+    }
+    final state = await _methodChannel
+        .invokeMethod<Map>('getWechatNotificationState')
+        .then((v) => Map<String, dynamic>.from(v ?? const <String, dynamic>{}));
+    state.putIfAbsent('enabled', () => false);
+    state.putIfAbsent('hasWechat', () => false);
+    state.putIfAbsent('updatedAtMs', () => 0);
+    return state;
+  }
+
   Future<Map<String, dynamic>?> getLatestAlipayNotification() async {
     if (!Platform.isAndroid) return null;
     final data = await _methodChannel
@@ -61,10 +78,34 @@ class AndroidNotificationListenerService {
     return data;
   }
 
+  Future<Map<String, dynamic>?> getLatestWechatNotification() async {
+    if (!Platform.isAndroid) return null;
+    final data = await _methodChannel
+        .invokeMethod<Map>('getLatestWechatNotification')
+        .then((v) => v == null ? null : Map<String, dynamic>.from(v));
+    return data;
+  }
+
+  Future<Map<String, dynamic>?> getLatestWechatPaymentNotification() async {
+    if (!Platform.isAndroid) return null;
+    final data = await _methodChannel
+        .invokeMethod<Map>('getLatestWechatPaymentNotification')
+        .then((v) => v == null ? null : Map<String, dynamic>.from(v));
+    return data;
+  }
+
   Future<List<Map<String, dynamic>>> getActiveAlipayNotificationsSnapshot() async {
     if (!Platform.isAndroid) return const [];
     final data = await _methodChannel
         .invokeMethod<List>('getActiveAlipayNotificationsSnapshot')
+        .then((v) => (v ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    return data;
+  }
+
+  Future<List<Map<String, dynamic>>> getActiveWechatNotificationsSnapshot() async {
+    if (!Platform.isAndroid) return const [];
+    final data = await _methodChannel
+        .invokeMethod<List>('getActiveWechatNotificationsSnapshot')
         .then((v) => (v ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
     return data;
   }

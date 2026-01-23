@@ -146,6 +146,36 @@ class KioskServerService {
       );
     });
 
+    router.get('/notifications/wechat', (Request request) async {
+      final state = await _notificationListenerService.getWechatState();
+      return Response.ok(
+        jsonEncode(state),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
+    router.get('/notifications/wechat/latest', (Request request) async {
+      final latest = await _notificationListenerService.getLatestWechatNotification();
+      if (latest == null) {
+        return Response.notFound(jsonEncode({'message': 'No WeChat notification captured'}));
+      }
+      return Response.ok(
+        jsonEncode(latest),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
+    router.get('/notifications/wechat/payment/latest', (Request request) async {
+      final latest = await _notificationListenerService.getLatestWechatPaymentNotification();
+      if (latest == null) {
+        return Response.notFound(jsonEncode({'message': 'No WeChat payment notification captured'}));
+      }
+      return Response.ok(
+        jsonEncode(latest),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
     // Endpoint: Sync Products (Push from Manager)
     router.post('/sync/products', (Request request) async {
       try {
