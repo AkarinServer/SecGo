@@ -290,6 +290,12 @@ abstract class AppLocalizations {
   /// **'Please enter price'**
   String get priceRequired;
 
+  /// No description provided for @priceInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid price (max 2 decimals)'**
+  String get priceInvalid;
+
   /// No description provided for @backupRestore.
   ///
   /// In en, this message translates to:
@@ -607,6 +613,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Port'**
   String get portLabel;
+
+  /// No description provided for @addAlipayQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Alipay QR'**
+  String get addAlipayQr;
+
+  /// No description provided for @addWechatQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Add WeChat QR'**
+  String get addWechatQr;
+
+  /// No description provided for @addCustomQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Custom QR'**
+  String get addCustomQr;
+
+  /// No description provided for @customPaymentMethodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom payment method'**
+  String get customPaymentMethodTitle;
+
+  /// No description provided for @customPaymentMethodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. bank_xyz'**
+  String get customPaymentMethodHint;
+
+  /// No description provided for @customPaymentMethodInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a name'**
+  String get customPaymentMethodInvalid;
+
+  /// No description provided for @uploadedPaymentQrs.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded {count} payment QRs'**
+  String uploadedPaymentQrs(Object count);
 }
 
 class _AppLocalizationsDelegate

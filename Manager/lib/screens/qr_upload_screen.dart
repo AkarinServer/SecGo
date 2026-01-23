@@ -17,7 +17,7 @@ class _QrUploadScreenState extends State<QrUploadScreen> {
   final KioskClientService _kioskService = KioskClientService();
   final KioskConnectionService _connectionService = KioskConnectionService();
   final ImagePicker _picker = ImagePicker();
-  File? _image;
+  final Map<String, File> _imagesByProvider = {};
   bool _isUploading = false;
 
   @override
@@ -36,17 +36,73 @@ class _QrUploadScreenState extends State<QrUploadScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _pickImage() async {
+  Future<File?> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
+      return File(pickedFile.path);
     }
+    return null;
   }
 
-  Future<void> _uploadImage() async {
-    if (_image == null) return;
+  Future<String?> _promptCustomProvider() async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    String? errorText;
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(l10n.customPaymentMethodTitle),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: l10n.customPaymentMethodHint,
+              errorText: errorText,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                final v = controller.text.trim().toLowerCase();
+                if (v.isEmpty) {
+                  setState(() => errorText = l10n.customPaymentMethodInvalid);
+                  return;
+                }
+                Navigator.pop(context, v);
+              },
+              child: Text(l10n.confirm),
+            ),
+          ],
+        ),
+      ),
+    );
+    return result;
+  }
+
+  Future<void> _addProviderImage(String provider) async {
+    if (!_connectionService.hasConnectedKiosk) return;
+    final file = await _pickImage();
+    if (file == null) return;
+    if (!mounted) return;
+    setState(() => _imagesByProvider[provider] = file);
+  }
+
+  Future<void> _addCustomProviderImage() async {
+    if (!_connectionService.hasConnectedKiosk) return;
+    final provider = await _promptCustomProvider();
+    if (!mounted) return;
+    if (provider == null || provider.isEmpty) return;
+    await _addProviderImage(provider);
+  }
+
+  Future<void> _uploadImages() async {
+    if (_imagesByProvider.isEmpty) return;
     final connectedKiosk = _connectionService.connectedKiosk;
     if (connectedKiosk == null) {
       final l10n = AppLocalizations.of(context)!;
@@ -58,13 +114,16 @@ class _QrUploadScreenState extends State<QrUploadScreen> {
 
     setState(() => _isUploading = true);
     try {
-      final bytes = await _image!.readAsBytes();
-      final base64Image = base64Encode(bytes);
-      final success = await _kioskService.uploadPaymentQr(
+      final payload = <String, String>{};
+      for (final entry in _imagesByProvider.entries) {
+        final bytes = await entry.value.readAsBytes();
+        payload[entry.key] = base64Encode(bytes);
+      }
+      final success = await _kioskService.uploadPaymentQrs(
         connectedKiosk.ip,
         connectedKiosk.port,
         connectedKiosk.pin,
-        base64Image,
+        payload,
       );
 
       setState(() => _isUploading = false);
@@ -73,7 +132,7 @@ class _QrUploadScreenState extends State<QrUploadScreen> {
         final l10n = AppLocalizations.of(context)!;
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.uploadedToKiosks(1))),
+            SnackBar(content: Text(l10n.uploadedPaymentQrs(_imagesByProvider.length))),
           );
           Navigator.pop(context);
         } else {
@@ -97,40 +156,87 @@ class _QrUploadScreenState extends State<QrUploadScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isConnected = _connectionService.hasConnectedKiosk;
-    final canUpload = isConnected && _image != null && !_isUploading;
+    final canUpload = isConnected && _imagesByProvider.isNotEmpty && !_isUploading;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.uploadQr)),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (!isConnected)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  l10n.connectKioskToUpload,
-                  textAlign: TextAlign.center,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              if (!isConnected)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    l10n.connectKioskToUpload,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: isConnected ? () => _addProviderImage('alipay') : null,
+                    child: Text(l10n.addAlipayQr),
+                  ),
+                  ElevatedButton(
+                    onPressed: isConnected ? () => _addProviderImage('wechat') : null,
+                    child: Text(l10n.addWechatQr),
+                  ),
+                  ElevatedButton(
+                    onPressed: isConnected ? _addCustomProviderImage : null,
+                    child: Text(l10n.addCustomQr),
+                  ),
+                ],
               ),
-            if (_image != null)
-              Image.file(_image!, height: 300)
-            else
-              const Icon(Icons.qr_code, size: 100, color: Colors.grey),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: isConnected ? _pickImage : null,
-              icon: const Icon(Icons.image),
-              label: Text(l10n.selectImage),
-            ),
-            const SizedBox(height: 20),
-            if (_isUploading)
-              const CircularProgressIndicator()
-            else
+              const SizedBox(height: 16),
+              Expanded(
+                child: _imagesByProvider.isEmpty
+                    ? const Center(
+                        child: Icon(Icons.qr_code, size: 100, color: Colors.grey),
+                      )
+                    : ListView(
+                        children: _imagesByProvider.entries.map((e) {
+                          final label = e.key == 'alipay'
+                              ? l10n.paymentMethodAlipay
+                              : e.key == 'wechat'
+                                  ? l10n.paymentMethodWechat
+                                  : e.key;
+                          return Card(
+                            child: ListTile(
+                              title: Text(label),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Image.file(e.value, height: 140),
+                              ),
+                              trailing: IconButton(
+                                tooltip: l10n.remove,
+                                icon: const Icon(Icons.close),
+                                onPressed: _isUploading
+                                    ? null
+                                    : () {
+                                        setState(() => _imagesByProvider.remove(e.key));
+                                      },
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ),
+              const SizedBox(height: 12),
+              if (_isUploading)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: CircularProgressIndicator(),
+                ),
               ElevatedButton(
-                onPressed: canUpload ? _uploadImage : null,
+                onPressed: canUpload ? _uploadImages : null,
                 child: Text(l10n.uploadToServer),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -58,6 +58,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get invalidPin => '无效的PIN码';
 
   @override
+  String get ok => '确定';
+
+  @override
+  String get amountMismatchWaiting => '金额不匹配，仍在等待支付...';
+
+  @override
+  String get paymentTimeoutTitle => '支付超时';
+
+  @override
+  String get paymentTimeoutContent => '自动确认超时，需要人工/管理员处理。';
+
+  @override
+  String get paymentMethodAlipay => '支付宝';
+
+  @override
+  String get paymentMethodWechat => '微信';
+
+  @override
   String addedProduct(Object product) {
     return '已添加 $product';
   }

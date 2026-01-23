@@ -266,6 +266,63 @@ class KioskClientService {
     }
   }
 
+  Future<bool> uploadPaymentQrForProvider(
+    String ip,
+    int port,
+    String pin,
+    String provider,
+    String base64Image,
+  ) async {
+    final key = provider.trim().toLowerCase();
+    if (key.isEmpty) return false;
+    try {
+      final response = await _client.post(
+        Uri.parse('http://$ip:$port/payment_qr'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $pin',
+        },
+        body: jsonEncode({'provider': key, 'data': base64Image}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error uploading provider QR to kiosk: $e');
+      return false;
+    }
+  }
+
+  Future<bool> uploadPaymentQrs(
+    String ip,
+    int port,
+    String pin,
+    Map<String, String> providerToBase64,
+  ) async {
+    if (providerToBase64.isEmpty) return true;
+    final items = <String, String>{};
+    for (final entry in providerToBase64.entries) {
+      final k = entry.key.trim().toLowerCase();
+      if (k.isEmpty) continue;
+      final v = entry.value;
+      if (v.isEmpty) continue;
+      items[k] = v;
+    }
+    if (items.isEmpty) return false;
+    try {
+      final response = await _client.post(
+        Uri.parse('http://$ip:$port/payment_qrs'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $pin',
+        },
+        body: jsonEncode({'items': items}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error uploading QRs to kiosk: $e');
+      return false;
+    }
+  }
+
   Future<List<Order>?> fetchOrders(String ip, int port, String pin) async {
     try {
       final response = await _client.get(

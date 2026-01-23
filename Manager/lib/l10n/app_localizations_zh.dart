@@ -111,6 +111,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get priceRequired => '请输入价格';
 
   @override
+  String get priceInvalid => '请输入正确的价格（最多两位小数）';
+
+  @override
   String get backupRestore => '备份与恢复';
 
   @override
@@ -287,4 +290,27 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get portLabel => '端口';
+
+  @override
+  String get addAlipayQr => '添加支付宝二维码';
+
+  @override
+  String get addWechatQr => '添加微信二维码';
+
+  @override
+  String get addCustomQr => '添加自定义二维码';
+
+  @override
+  String get customPaymentMethodTitle => '自定义支付方式';
+
+  @override
+  String get customPaymentMethodHint => '例如：bank_xyz';
+
+  @override
+  String get customPaymentMethodInvalid => '请输入名称';
+
+  @override
+  String uploadedPaymentQrs(Object count) {
+    return '已上传 $count 个支付二维码';
+  }
 }

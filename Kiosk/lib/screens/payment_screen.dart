@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -34,16 +35,34 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final PaymentNotificationWatchService _watchService = PaymentNotificationWatchService();
   final AndroidNotificationListenerService _notificationListenerService =
       AndroidNotificationListenerService();
-  String? _qrData;
+  Map<String, String> _qrs = {};
   bool _isLoading = true;
   int _adminTapCount = 0;
   bool _autoConfirmStarted = false;
+  bool _confirmed = false;
+  bool _showPaymentSuccess = false;
 
   @override
   void initState() {
     super.initState();
+    unawaited(_settingsService.setPendingPaymentOrderId(widget.orderId));
     _loadQrCode();
     _startAutoConfirm();
+  }
+
+  void _confirmPayment() {
+    if (_confirmed) return;
+    _confirmed = true;
+    unawaited(_settingsService.setPendingPaymentOrderId(null));
+    if (mounted) {
+      setState(() => _showPaymentSuccess = true);
+    }
+    unawaited(
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        widget.onPaymentConfirmed();
+      }),
+    );
   }
 
   Future<void> _startAutoConfirm() async {
@@ -85,26 +104,28 @@ class _PaymentScreenState extends State<PaymentScreen> {
       baselineKeys: baseline,
       onMatched: () {
         if (!mounted) return;
-        widget.onPaymentConfirmed();
+        _confirmPayment();
       },
       onMismatch: (message) {
         if (!mounted) return;
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Amount mismatch, still waiting for payment...')),
+          SnackBar(content: Text(l10n.amountMismatchWaiting)),
         );
       },
       onTimeout: () async {
         if (!mounted) return;
+        final l10n = AppLocalizations.of(context)!;
         await showDialog(
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: const Text('Payment timeout'),
-              content: const Text('Auto confirmation timed out. Manual/admin handling required.'),
+              title: Text(l10n.paymentTimeoutTitle),
+              content: Text(l10n.paymentTimeoutContent),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
+                  child: Text(l10n.ok),
                 ),
               ],
             );
@@ -117,14 +138,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void dispose() {
     _watchService.stop();
+    if (!_confirmed) {
+      final pendingId = _settingsService.getPendingPaymentOrderId();
+      if (pendingId == widget.orderId) {
+        unawaited(_settingsService.setPendingPaymentOrderId(null));
+      }
+    }
     super.dispose();
   }
 
   Future<void> _loadQrCode() async {
-    final qrData = _settingsService.getPaymentQr();
+    final qrs = _settingsService.getPaymentQrs();
     if (mounted) {
       setState(() {
-        _qrData = qrData;
+        _qrs = qrs;
         _isLoading = false;
       });
     }
@@ -161,7 +188,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               // Hardcoded PIN for now: 1234
               if (pinController.text == '1234') {
                 Navigator.pop(context);
-                widget.onPaymentConfirmed();
+                _confirmPayment();
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(l10n.invalidPin)),
@@ -175,11 +202,48 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
+  Widget _buildQrTile(String provider, String base64Qr) {
+    final l10n = AppLocalizations.of(context)!;
+    final label = provider == 'alipay'
+        ? l10n.paymentMethodAlipay
+        : provider == 'wechat'
+            ? l10n.paymentMethodWechat
+            : provider;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: _handleAdminTap,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Image.memory(
+              base64Decode(base64Qr),
+              width: 220,
+              height: 220,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final currencyFormat = NumberFormat.currency(symbol: '¥');
+    final providers = _qrs.keys.toList()..sort();
     
     return Scaffold(
       // backgroundColor: Colors.black, // Use theme
@@ -188,49 +252,99 @@ class _PaymentScreenState extends State<PaymentScreen> {
         // backgroundColor: Colors.black, // Use theme
         // foregroundColor: Colors.white, // Use theme
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              l10n.totalWithAmount(currencyFormat.format(widget.totalAmount)),
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 40),
-            if (_isLoading)
-              const CircularProgressIndicator()
-            else if (_qrData != null)
-              GestureDetector(
-                onTap: _handleAdminTap,
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white, // QR codes need white background
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Image.memory(
-                    base64Decode(_qrData!),
-                    width: 300,
-                    height: 300,
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              Widget content;
+              if (_isLoading) {
+                content = const CircularProgressIndicator();
+              } else if (providers.isEmpty) {
+                content = Text(
+                  l10n.failedQr,
+                  style: TextStyle(color: theme.colorScheme.error),
+                );
+              } else {
+                content = Wrap(
+                  spacing: 24,
+                  runSpacing: 24,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    for (final p in providers) _buildQrTile(p, _qrs[p]!),
+                  ],
+                );
+              }
+
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            l10n.totalWithAmount(currencyFormat.format(widget.totalAmount)),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          content,
+                          const SizedBox(height: 24),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              l10n.scanQr,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              )
-            else
-              Text(
-                l10n.failedQr,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-            const SizedBox(height: 40),
-            Text(
-              l10n.scanQr,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              );
+            },
+          ),
+          if (_showPaymentSuccess)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.65),
+                child: Center(
+                  child: AnimatedScale(
+                    scale: _showPaymentSuccess ? 1 : 0.9,
+                    duration: const Duration(milliseconds: 300),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.green, size: 96),
+                        const SizedBox(height: 16),
+                        Text(
+                          l10n.paymentSuccess,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.returningHome,
+                          style: const TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

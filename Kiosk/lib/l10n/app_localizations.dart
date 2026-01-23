@@ -188,6 +188,42 @@ abstract class AppLocalizations {
   /// **'Invalid PIN'**
   String get invalidPin;
 
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @amountMismatchWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount mismatch, still waiting for payment...'**
+  String get amountMismatchWaiting;
+
+  /// No description provided for @paymentTimeoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment timeout'**
+  String get paymentTimeoutTitle;
+
+  /// No description provided for @paymentTimeoutContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto confirmation timed out. Manual/admin handling required.'**
+  String get paymentTimeoutContent;
+
+  /// No description provided for @paymentMethodAlipay.
+  ///
+  /// In en, this message translates to:
+  /// **'Alipay'**
+  String get paymentMethodAlipay;
+
+  /// No description provided for @paymentMethodWechat.
+  ///
+  /// In en, this message translates to:
+  /// **'WeChat'**
+  String get paymentMethodWechat;
+
   /// No description provided for @addedProduct.
   ///
   /// In en, this message translates to:

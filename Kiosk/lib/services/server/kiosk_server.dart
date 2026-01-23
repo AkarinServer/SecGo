@@ -225,14 +225,46 @@ class KioskServerService {
       try {
         final payload = await request.readAsString();
         final Map<String, dynamic> data = jsonDecode(payload);
-        if (data.containsKey('data')) {
-          await _settingsService.setPaymentQr(data['data']);
-          return Response.ok(jsonEncode({'message': 'Payment QR updated'}));
-        } else {
+        final raw = data['data'];
+        if (raw is! String || raw.isEmpty) {
           return Response.badRequest(body: 'Missing "data" field');
         }
+
+        final provider = data['provider']?.toString().trim();
+        if (provider != null && provider.isNotEmpty) {
+          await _settingsService.setPaymentQrForProvider(provider, raw);
+          return Response.ok(jsonEncode({'message': 'Payment QR updated', 'provider': provider}));
+        }
+
+        await _settingsService.setPaymentQr(raw);
+        return Response.ok(jsonEncode({'message': 'Payment QR updated'}));
       } catch (e) {
         return Response.internalServerError(body: 'Failed to update QR: $e');
+      }
+    });
+
+    router.post('/payment_qrs', (Request request) async {
+      try {
+        final payload = await request.readAsString();
+        final Map<String, dynamic> data = jsonDecode(payload);
+        final items = data['items'];
+        if (items is! Map) {
+          return Response.badRequest(body: 'Missing "items" field');
+        }
+
+        var updated = 0;
+        for (final entry in items.entries) {
+          final provider = entry.key?.toString().trim();
+          final qr = entry.value?.toString();
+          if (provider == null || provider.isEmpty) continue;
+          if (qr == null || qr.isEmpty) continue;
+          await _settingsService.setPaymentQrForProvider(provider, qr);
+          updated++;
+        }
+
+        return Response.ok(jsonEncode({'message': 'Payment QRs updated', 'count': updated}));
+      } catch (e) {
+        return Response.internalServerError(body: 'Failed to update QRs: $e');
       }
     });
 

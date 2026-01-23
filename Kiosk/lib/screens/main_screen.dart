@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:kiosk/l10n/app_localizations.dart';
 import 'package:kiosk/config/store_config.dart';
 import 'package:kiosk/services/restore_notifier.dart';
 import 'package:kiosk/services/android_notification_listener_service.dart';
+import 'package:kiosk/services/settings_service.dart';
 
 // Helper class for cart items
 class CartItem {
@@ -85,6 +87,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
+  final SettingsService _settingsService = SettingsService();
   final Map<String, CartItem> _cartItems = {}; // Use Map for O(1) lookups
   bool _isProcessing = false;
   final RestoreNotifier _restoreNotifier = RestoreNotifier.instance;
@@ -174,30 +177,40 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _resumePendingPaymentIfAny() async {
     if (!mounted) return;
-    final pending = await _db.getLatestPendingAlipayOrder();
-    if (pending == null) return;
+    final pendingId = _settingsService.getPendingPaymentOrderId();
+    if (pendingId == null) return;
+    final order = await _db.getOrderById(pendingId);
+    if (order == null) {
+      await _settingsService.setPendingPaymentOrderId(null);
+      return;
+    }
+    final paid = order.alipayNotifyCheckedAmount || order.wechatNotifyCheckedAmount;
+    if (paid) {
+      await _settingsService.setPendingPaymentOrderId(null);
+      return;
+    }
+    final checkoutTimeMs =
+        order.alipayCheckoutTimeMs ?? order.wechatCheckoutTimeMs ?? order.timestamp;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (nowMs - checkoutTimeMs > const Duration(minutes: 30).inMilliseconds) {
+      await _settingsService.setPendingPaymentOrderId(null);
+      return;
+    }
     if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => PaymentScreen(
-          totalAmount: pending.totalAmount,
-          orderId: pending.id,
-          checkoutTimeMs: pending.alipayCheckoutTimeMs ?? pending.timestamp,
+          totalAmount: order.totalAmount,
+          orderId: order.id,
+          checkoutTimeMs: checkoutTimeMs,
           baselineKeys: const [],
           autoConfirmEnabled: true,
           onPaymentConfirmed: () {
             if (!mounted) return;
-            final l10n = AppLocalizations.of(context)!;
             final navigator = Navigator.of(context);
-            final messenger = ScaffoldMessenger.of(context);
+            unawaited(_settingsService.setPendingPaymentOrderId(null));
             navigator.popUntil((route) => route.isFirst);
-            messenger.showSnackBar(
-              SnackBar(
-                content: Text(l10n.paymentSuccess),
-                duration: const Duration(seconds: 2),
-              ),
-            );
           },
         ),
       ),
@@ -398,6 +411,8 @@ class _MainScreenState extends State<MainScreen> {
     _isProcessing = false;
 
     if (!mounted) return;
+    await _settingsService.setPendingPaymentOrderId(order.id);
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -408,15 +423,12 @@ class _MainScreenState extends State<MainScreen> {
           baselineKeys: baselineKeys.toList(),
           autoConfirmEnabled: autoConfirmEnabled,
           onPaymentConfirmed: () {
-            final l10n = AppLocalizations.of(context)!;
+            if (!mounted) return;
             final navigator = Navigator.of(context);
-            final messenger = ScaffoldMessenger.of(context);
 
+            unawaited(_settingsService.setPendingPaymentOrderId(null));
             _clearCart();
             navigator.pop();
-            messenger.showSnackBar(
-              SnackBar(content: Text(l10n.paymentSuccess)),
-            );
           },
         ),
       ),

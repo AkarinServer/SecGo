@@ -31,6 +31,7 @@
   "barcodeRequired": "Please enter barcode",
   "nameRequired": "Please enter name",
   "priceRequired": "Please enter price",
+  "priceInvalid": "Please enter a valid price (max 2 decimals)",
   "backupRestore": "Backup & Restore",
   "createNewBackup": "Create New Backup",
   "noBackupsFound": "No backups found",
@@ -83,5 +84,12 @@
   "paymentMethodPending": "Pending",
   "manualPair": "Manual Pair",
   "ipLabel": "IP",
-  "portLabel": "Port"
+  "portLabel": "Port",
+  "addAlipayQr": "Add Alipay QR",
+  "addWechatQr": "Add WeChat QR",
+  "addCustomQr": "Add Custom QR",
+  "customPaymentMethodTitle": "Custom payment method",
+  "customPaymentMethodHint": "e.g. bank_xyz",
+  "customPaymentMethodInvalid": "Please enter a name",
+  "uploadedPaymentQrs": "Uploaded {count} payment QRs"
 }

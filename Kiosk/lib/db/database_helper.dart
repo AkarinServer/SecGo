@@ -145,6 +145,18 @@ class DatabaseHelper {
     return maps.map((map) => Order.fromMap(map)).toList();
   }
 
+  Future<Order?> getOrderById(String id) async {
+    final db = await instance.database;
+    final maps = await db.query(
+      'orders',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return Order.fromMap(maps.first);
+  }
+
   Future<Order?> getLatestPendingAlipayOrder({Duration maxAge = const Duration(minutes: 30)}) async {
     final db = await instance.database;
     final maps = await db.query(
