@@ -12,6 +12,40 @@ class KioskClientService {
 
   KioskClientService({http.Client? client}) : _client = client ?? http.Client();
 
+  Future<({String? deviceId, String? error, int? statusCode})> fetchDeviceIdDebug(
+    String ip,
+    int port,
+    String pin,
+  ) async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse('http://$ip:$port/status'),
+            headers: {
+              'Authorization': 'Bearer $pin',
+            },
+          )
+          .timeout(const Duration(seconds: 3));
+
+      if (response.statusCode != 200) {
+        return (
+          deviceId: null,
+          error: 'HTTP ${response.statusCode}: ${response.body}',
+          statusCode: response.statusCode,
+        );
+      }
+
+      final data = jsonDecode(response.body);
+      final deviceId = data is Map ? data['device_id']?.toString() : null;
+      if (deviceId == null || deviceId.isEmpty) {
+        return (deviceId: null, error: 'Missing device_id', statusCode: 200);
+      }
+      return (deviceId: deviceId, error: null, statusCode: 200);
+    } catch (e) {
+      return (deviceId: null, error: e.toString(), statusCode: null);
+    }
+  }
+
   Future<List<String>> getCandidateKioskIps() async {
     final info = NetworkInfo();
     final candidates = <String>{};
@@ -38,10 +72,11 @@ class KioskClientService {
               'Authorization': 'Bearer $pin',
             },
           )
-          .timeout(const Duration(seconds: 1));
+          .timeout(const Duration(seconds: 3));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['device_id'];
+        if (data is! Map) return null;
+        return data['device_id']?.toString();
       }
       return null;
     } catch (e) {

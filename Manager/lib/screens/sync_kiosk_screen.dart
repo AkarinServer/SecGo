@@ -26,8 +26,18 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
       try {
         final Map<String, dynamic> data = jsonDecode(code);
         if (data.containsKey('ip') && data.containsKey('port')) {
-          final ip = data['ip'] as String;
-          final port = data['port'] as int;
+          final ip = data['ip']?.toString();
+          final portValue = data['port'];
+          final port = portValue is int ? portValue : int.tryParse(portValue?.toString() ?? '');
+          if (ip == null || ip.isEmpty || port == null) {
+            if (mounted) {
+              setState(() {
+                _isSyncing = false;
+                _statusMessage = AppLocalizations.of(context)!.pairFailed;
+              });
+            }
+            return;
+          }
           final deviceId = data['deviceId'] as String?;
           setState(() {
             _isSyncing = true;
@@ -118,7 +128,8 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
       _statusMessage = l10n.pairingKiosk(ip);
     });
 
-    final fetchedDeviceId = await _kioskService.fetchDeviceId(ip, port, pin);
+    final debugResult = await _kioskService.fetchDeviceIdDebug(ip, port, pin);
+    final fetchedDeviceId = debugResult.deviceId;
     final success = fetchedDeviceId != null;
 
     if (!mounted) return;
@@ -142,7 +153,8 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
     } else {
       setState(() {
         _isSyncing = false;
-        _statusMessage = l10n.pairFailed;
+        final err = debugResult.error;
+        _statusMessage = err == null || err.isEmpty ? l10n.pairFailed : err;
       });
     }
   }
