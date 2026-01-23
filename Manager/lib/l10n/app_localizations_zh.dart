@@ -264,4 +264,27 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get confirm => '确认';
+
+  @override
+  String payMethodLabel(Object method) {
+    return '支付方式：$method';
+  }
+
+  @override
+  String get paymentMethodAlipay => '支付宝';
+
+  @override
+  String get paymentMethodWechat => '微信';
+
+  @override
+  String get paymentMethodPending => '待确认';
+
+  @override
+  String get manualPair => '手动配对';
+
+  @override
+  String get ipLabel => 'IP';
+
+  @override
+  String get portLabel => '端口';
 }

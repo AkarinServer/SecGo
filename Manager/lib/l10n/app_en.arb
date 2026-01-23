@@ -76,5 +76,12 @@
   "enterPinTitle": "Enter PIN",
   "enterPinHint": "Kiosk PIN",
   "pinLength": "PIN must be at least 4 digits",
-  "confirm": "Confirm"
+  "confirm": "Confirm",
+  "payMethodLabel": "Pay: {method}",
+  "paymentMethodAlipay": "Alipay",
+  "paymentMethodWechat": "WeChat",
+  "paymentMethodPending": "Pending",
+  "manualPair": "Manual Pair",
+  "ipLabel": "IP",
+  "portLabel": "Port"
 }

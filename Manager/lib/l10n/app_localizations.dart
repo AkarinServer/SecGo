@@ -565,6 +565,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm'**
   String get confirm;
+
+  /// No description provided for @payMethodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay: {method}'**
+  String payMethodLabel(Object method);
+
+  /// No description provided for @paymentMethodAlipay.
+  ///
+  /// In en, this message translates to:
+  /// **'Alipay'**
+  String get paymentMethodAlipay;
+
+  /// No description provided for @paymentMethodWechat.
+  ///
+  /// In en, this message translates to:
+  /// **'WeChat'**
+  String get paymentMethodWechat;
+
+  /// No description provided for @paymentMethodPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get paymentMethodPending;
+
+  /// No description provided for @manualPair.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Pair'**
+  String get manualPair;
+
+  /// No description provided for @ipLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'IP'**
+  String get ipLabel;
+
+  /// No description provided for @portLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get portLabel;
 }
 
 class _AppLocalizationsDelegate

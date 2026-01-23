@@ -203,12 +203,12 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
             TextField(
               controller: ipController,
               keyboardType: TextInputType.url,
-              decoration: const InputDecoration(labelText: 'IP'),
+              decoration: InputDecoration(labelText: l10n.ipLabel),
             ),
             TextField(
               controller: portController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Port'),
+              decoration: InputDecoration(labelText: l10n.portLabel),
             ),
           ],
         ),
@@ -271,7 +271,7 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: _manualPair,
-                          child: const Text('Manual Pair'),
+                          child: Text(l10n.manualPair),
                         ),
                       ],
                     ),

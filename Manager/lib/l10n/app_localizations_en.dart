@@ -267,4 +267,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirm => 'Confirm';
+
+  @override
+  String payMethodLabel(Object method) {
+    return 'Pay: $method';
+  }
+
+  @override
+  String get paymentMethodAlipay => 'Alipay';
+
+  @override
+  String get paymentMethodWechat => 'WeChat';
+
+  @override
+  String get paymentMethodPending => 'Pending';
+
+  @override
+  String get manualPair => 'Manual Pair';
+
+  @override
+  String get ipLabel => 'IP';
+
+  @override
+  String get portLabel => 'Port';
 }

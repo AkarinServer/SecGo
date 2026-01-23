@@ -76,5 +76,12 @@
   "enterPinTitle": "输入PIN",
   "enterPinHint": "终端PIN",
   "pinLength": "PIN至少4位",
-  "confirm": "确认"
+  "confirm": "确认",
+  "payMethodLabel": "支付方式：{method}",
+  "paymentMethodAlipay": "支付宝",
+  "paymentMethodWechat": "微信",
+  "paymentMethodPending": "待确认",
+  "manualPair": "手动配对",
+  "ipLabel": "IP",
+  "portLabel": "端口"
 }
