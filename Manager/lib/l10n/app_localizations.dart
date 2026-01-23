@@ -290,6 +290,12 @@ abstract class AppLocalizations {
   /// **'Please enter price'**
   String get priceRequired;
 
+  /// No description provided for @priceInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid price (max 2 decimals)'**
+  String get priceInvalid;
+
   /// No description provided for @backupRestore.
   ///
   /// In en, this message translates to:
@@ -565,6 +571,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm'**
   String get confirm;
+
+  /// No description provided for @payMethodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay: {method}'**
+  String payMethodLabel(Object method);
+
+  /// No description provided for @paymentMethodAlipay.
+  ///
+  /// In en, this message translates to:
+  /// **'Alipay'**
+  String get paymentMethodAlipay;
+
+  /// No description provided for @paymentMethodWechat.
+  ///
+  /// In en, this message translates to:
+  /// **'WeChat'**
+  String get paymentMethodWechat;
+
+  /// No description provided for @paymentMethodPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get paymentMethodPending;
+
+  /// No description provided for @manualPair.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Pair'**
+  String get manualPair;
+
+  /// No description provided for @ipLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'IP'**
+  String get ipLabel;
+
+  /// No description provided for @portLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get portLabel;
+
+  /// No description provided for @addAlipayQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Alipay QR'**
+  String get addAlipayQr;
+
+  /// No description provided for @addWechatQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Add WeChat QR'**
+  String get addWechatQr;
+
+  /// No description provided for @addCustomQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Custom QR'**
+  String get addCustomQr;
+
+  /// No description provided for @customPaymentMethodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom payment method'**
+  String get customPaymentMethodTitle;
+
+  /// No description provided for @customPaymentMethodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. bank_xyz'**
+  String get customPaymentMethodHint;
+
+  /// No description provided for @customPaymentMethodInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a name'**
+  String get customPaymentMethodInvalid;
+
+  /// No description provided for @uploadedPaymentQrs.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded {count} payment QRs'**
+  String uploadedPaymentQrs(Object count);
 }
 
 class _AppLocalizationsDelegate

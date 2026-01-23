@@ -101,6 +101,11 @@ class _KioskHistoryScreenState extends State<KioskHistoryScreen> {
                       itemBuilder: (context, index) {
                         final order = _orders[index];
                         final date = DateTime.fromMillisecondsSinceEpoch(order.timestamp);
+                        final method = order.alipayNotifyCheckedAmount
+                            ? l10n.paymentMethodAlipay
+                            : order.wechatNotifyCheckedAmount
+                                ? l10n.paymentMethodWechat
+                                : l10n.paymentMethodPending;
                         
                         return ExpansionTile(
                           leading: CircleAvatar(
@@ -110,7 +115,13 @@ class _KioskHistoryScreenState extends State<KioskHistoryScreen> {
                             l10n.orderNumber(order.id.substring(order.id.length - 4)),
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          subtitle: Text(DateFormat('yyyy-MM-dd HH:mm').format(date)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(DateFormat('yyyy-MM-dd HH:mm').format(date)),
+                              Text(l10n.payMethodLabel(method)),
+                            ],
+                          ),
                           trailing: Text(
                             currencyFormat.format(order.totalAmount),
                             style: const TextStyle(

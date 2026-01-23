@@ -58,6 +58,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidPin => 'Invalid PIN';
 
   @override
+  String get ok => 'OK';
+
+  @override
+  String get amountMismatchWaiting =>
+      'Amount mismatch, still waiting for payment...';
+
+  @override
+  String get paymentTimeoutTitle => 'Payment timeout';
+
+  @override
+  String get paymentTimeoutContent =>
+      'Auto confirmation timed out. Manual/admin handling required.';
+
+  @override
+  String get paymentMethodAlipay => 'Alipay';
+
+  @override
+  String get paymentMethodWechat => 'WeChat';
+
+  @override
   String addedProduct(Object product) {
     return 'Added $product';
   }

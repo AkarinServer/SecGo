@@ -11,6 +11,7 @@ import 'package:kiosk/db/database_helper.dart';
 import 'package:kiosk/models/product.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
+import 'package:kiosk/services/android_notification_listener_service.dart';
 import 'package:kiosk/services/settings_service.dart';
 
 class KioskServerService {
@@ -22,6 +23,8 @@ class KioskServerService {
   final int _port = 8081;
   String? _deviceId;
   final SettingsService _settingsService = SettingsService();
+  final AndroidNotificationListenerService _notificationListenerService =
+      AndroidNotificationListenerService();
   final VoidCallback? onRestoreComplete;
 
   String? get ipAddress => _ipAddress;
@@ -113,6 +116,66 @@ class KioskServerService {
       }));
     });
 
+    router.get('/notifications/alipay', (Request request) async {
+      final state = await _notificationListenerService.getAlipayState();
+      return Response.ok(
+        jsonEncode(state),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
+    router.get('/notifications/alipay/latest', (Request request) async {
+      final latest = await _notificationListenerService.getLatestAlipayNotification();
+      if (latest == null) {
+        return Response.notFound(jsonEncode({'message': 'No Alipay notification captured'}));
+      }
+      return Response.ok(
+        jsonEncode(latest),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
+    router.get('/notifications/alipay/payment/latest', (Request request) async {
+      final latest = await _notificationListenerService.getLatestAlipayPaymentNotification();
+      if (latest == null) {
+        return Response.notFound(jsonEncode({'message': 'No Alipay payment notification captured'}));
+      }
+      return Response.ok(
+        jsonEncode(latest),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
+    router.get('/notifications/wechat', (Request request) async {
+      final state = await _notificationListenerService.getWechatState();
+      return Response.ok(
+        jsonEncode(state),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
+    router.get('/notifications/wechat/latest', (Request request) async {
+      final latest = await _notificationListenerService.getLatestWechatNotification();
+      if (latest == null) {
+        return Response.notFound(jsonEncode({'message': 'No WeChat notification captured'}));
+      }
+      return Response.ok(
+        jsonEncode(latest),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
+    router.get('/notifications/wechat/payment/latest', (Request request) async {
+      final latest = await _notificationListenerService.getLatestWechatPaymentNotification();
+      if (latest == null) {
+        return Response.notFound(jsonEncode({'message': 'No WeChat payment notification captured'}));
+      }
+      return Response.ok(
+        jsonEncode(latest),
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+
     // Endpoint: Sync Products (Push from Manager)
     router.post('/sync/products', (Request request) async {
       try {
@@ -162,14 +225,46 @@ class KioskServerService {
       try {
         final payload = await request.readAsString();
         final Map<String, dynamic> data = jsonDecode(payload);
-        if (data.containsKey('data')) {
-          await _settingsService.setPaymentQr(data['data']);
-          return Response.ok(jsonEncode({'message': 'Payment QR updated'}));
-        } else {
+        final raw = data['data'];
+        if (raw is! String || raw.isEmpty) {
           return Response.badRequest(body: 'Missing "data" field');
         }
+
+        final provider = data['provider']?.toString().trim();
+        if (provider != null && provider.isNotEmpty) {
+          await _settingsService.setPaymentQrForProvider(provider, raw);
+          return Response.ok(jsonEncode({'message': 'Payment QR updated', 'provider': provider}));
+        }
+
+        await _settingsService.setPaymentQr(raw);
+        return Response.ok(jsonEncode({'message': 'Payment QR updated'}));
       } catch (e) {
         return Response.internalServerError(body: 'Failed to update QR: $e');
+      }
+    });
+
+    router.post('/payment_qrs', (Request request) async {
+      try {
+        final payload = await request.readAsString();
+        final Map<String, dynamic> data = jsonDecode(payload);
+        final items = data['items'];
+        if (items is! Map) {
+          return Response.badRequest(body: 'Missing "items" field');
+        }
+
+        var updated = 0;
+        for (final entry in items.entries) {
+          final provider = entry.key?.toString().trim();
+          final qr = entry.value?.toString();
+          if (provider == null || provider.isEmpty) continue;
+          if (qr == null || qr.isEmpty) continue;
+          await _settingsService.setPaymentQrForProvider(provider, qr);
+          updated++;
+        }
+
+        return Response.ok(jsonEncode({'message': 'Payment QRs updated', 'count': updated}));
+      } catch (e) {
+        return Response.internalServerError(body: 'Failed to update QRs: $e');
       }
     });
 

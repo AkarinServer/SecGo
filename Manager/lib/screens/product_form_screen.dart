@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:manager/models/product.dart';
 import 'package:manager/services/api_service.dart';
@@ -21,6 +22,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   final _barcodeController = TextEditingController();
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
+  final _priceFocusNode = FocusNode();
   final ApiService _apiService = ApiService();
   final KioskConnectionService _connectionService = KioskConnectionService();
   bool _isLoading = false;
@@ -30,6 +32,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   void initState() {
     super.initState();
     _connectionService.addListener(_onConnectionChange);
+    _priceFocusNode.addListener(() {
+      if (!_priceFocusNode.hasFocus) {
+        _normalizePriceOnBlur();
+      }
+    });
     if (widget.initialBarcode != null) {
       _barcodeController.text = widget.initialBarcode!;
       _loadProduct(widget.initialBarcode!);
@@ -42,6 +49,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _barcodeController.dispose();
     _nameController.dispose();
     _priceController.dispose();
+    _priceFocusNode.dispose();
     super.dispose();
   }
 
@@ -53,16 +61,55 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     setState(() => _isLoading = true);
     
     // 1. Try Local DB first
-    Product? product = await DatabaseHelper.instance.getProduct(barcode);
+    final localProduct = await DatabaseHelper.instance.getProduct(barcode);
+    Product? product = localProduct;
     
     // 2. If not found, try External API (AliCloud)
     product ??= await _apiService.getProduct(barcode);
 
     if (product != null) {
       _nameController.text = product.name;
-      _priceController.text = product.price.toString();
+      if (localProduct != null) {
+        _priceController.text = product.price.toStringAsFixed(2);
+      } else {
+        _priceController.text = '';
+      }
     }
     setState(() => _isLoading = false);
+  }
+
+  bool _isPriceValidFinal(String input) {
+    final v = input.trim();
+    if (v.isEmpty) return false;
+    if (v.contains(',')) return false;
+    if (v.startsWith('.')) return false;
+    if (v.endsWith('.')) return false;
+    final ok = RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(v);
+    if (!ok) return false;
+    final n = double.tryParse(v);
+    if (n == null) return false;
+    if (n.isNaN || n.isInfinite) return false;
+    if (n < 0) return false;
+    return true;
+  }
+
+  void _normalizePriceOnBlur() {
+    final raw = _priceController.text.trim();
+    if (raw.isEmpty) return;
+    if (!_isPriceValidFinal(raw)) {
+      if (mounted) {
+        _formKey.currentState?.validate();
+      }
+      return;
+    }
+    final n = double.parse(raw);
+    final formatted = n.toStringAsFixed(2);
+    if (_priceController.text != formatted) {
+      _priceController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
   }
 
   Future<void> _scanBarcode() async {
@@ -105,8 +152,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   Future<void> _saveProduct() async {
     if (_isSaving) return;
-    if (!_formKey.currentState!.validate()) return;
     final l10n = AppLocalizations.of(context)!;
+    if (!_formKey.currentState!.validate()) {
+      if (_priceController.text.trim().isEmpty || !_isPriceValidFinal(_priceController.text)) {
+        _priceFocusNode.requestFocus();
+      }
+      return;
+    }
     final kiosk = _connectionService.connectedKiosk;
     if (kiosk == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -115,11 +167,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       return;
     }
 
+    _normalizePriceOnBlur();
     setState(() => _isSaving = true);
     final product = Product(
       barcode: _barcodeController.text,
       name: _nameController.text,
-      price: double.parse(_priceController.text),
+      price: double.parse(_priceController.text.trim()),
       lastUpdated: DateTime.now().millisecondsSinceEpoch,
     );
 
@@ -219,10 +272,27 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     TextFormField(
                       controller: _priceController,
                       decoration: InputDecoration(labelText: l10n.price),
-                      keyboardType: TextInputType.number,
+                      focusNode: _priceFocusNode,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          final text = newValue.text;
+                          if (text.isEmpty) return newValue;
+                          if (text.contains(',')) return oldValue;
+                          if (text.startsWith('.')) return oldValue;
+                          if (!RegExp(r'^\d*\.?\d{0,2}$').hasMatch(text)) {
+                            return oldValue;
+                          }
+                          return newValue;
+                        }),
+                      ],
                       enabled: isConnected && !_isSaving,
-                      validator: (value) =>
-                          value!.isEmpty ? l10n.priceRequired : null,
+                      validator: (value) {
+                        final v = value?.trim() ?? '';
+                        if (v.isEmpty) return l10n.priceRequired;
+                        if (!_isPriceValidFinal(v)) return l10n.priceInvalid;
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(

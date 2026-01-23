@@ -12,6 +12,40 @@ class KioskClientService {
 
   KioskClientService({http.Client? client}) : _client = client ?? http.Client();
 
+  Future<({String? deviceId, String? error, int? statusCode})> fetchDeviceIdDebug(
+    String ip,
+    int port,
+    String pin,
+  ) async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse('http://$ip:$port/status'),
+            headers: {
+              'Authorization': 'Bearer $pin',
+            },
+          )
+          .timeout(const Duration(seconds: 3));
+
+      if (response.statusCode != 200) {
+        return (
+          deviceId: null,
+          error: 'HTTP ${response.statusCode}: ${response.body}',
+          statusCode: response.statusCode,
+        );
+      }
+
+      final data = jsonDecode(response.body);
+      final deviceId = data is Map ? data['device_id']?.toString() : null;
+      if (deviceId == null || deviceId.isEmpty) {
+        return (deviceId: null, error: 'Missing device_id', statusCode: 200);
+      }
+      return (deviceId: deviceId, error: null, statusCode: 200);
+    } catch (e) {
+      return (deviceId: null, error: e.toString(), statusCode: null);
+    }
+  }
+
   Future<List<String>> getCandidateKioskIps() async {
     final info = NetworkInfo();
     final candidates = <String>{};
@@ -38,13 +72,64 @@ class KioskClientService {
               'Authorization': 'Bearer $pin',
             },
           )
-          .timeout(const Duration(seconds: 1));
+          .timeout(const Duration(seconds: 3));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['device_id'];
+        if (data is! Map) return null;
+        return data['device_id']?.toString();
       }
       return null;
     } catch (e) {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchAlipayNotificationState(
+    String ip,
+    int port,
+    String pin,
+  ) async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse('http://$ip:$port/notifications/alipay'),
+            headers: {
+              'Authorization': 'Bearer $pin',
+            },
+          )
+          .timeout(const Duration(seconds: 2));
+
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body);
+      if (data is! Map) return null;
+      return Map<String, dynamic>.from(data);
+    } catch (e) {
+      debugPrint('Error fetching Alipay notification state: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchLatestAlipayNotification(
+    String ip,
+    int port,
+    String pin,
+  ) async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse('http://$ip:$port/notifications/alipay/latest'),
+            headers: {
+              'Authorization': 'Bearer $pin',
+            },
+          )
+          .timeout(const Duration(seconds: 2));
+
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body);
+      if (data is! Map) return null;
+      return Map<String, dynamic>.from(data);
+    } catch (e) {
+      debugPrint('Error fetching latest Alipay notification: $e');
       return null;
     }
   }
@@ -177,6 +262,63 @@ class KioskClientService {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error uploading QR to kiosk: $e');
+      return false;
+    }
+  }
+
+  Future<bool> uploadPaymentQrForProvider(
+    String ip,
+    int port,
+    String pin,
+    String provider,
+    String base64Image,
+  ) async {
+    final key = provider.trim().toLowerCase();
+    if (key.isEmpty) return false;
+    try {
+      final response = await _client.post(
+        Uri.parse('http://$ip:$port/payment_qr'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $pin',
+        },
+        body: jsonEncode({'provider': key, 'data': base64Image}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error uploading provider QR to kiosk: $e');
+      return false;
+    }
+  }
+
+  Future<bool> uploadPaymentQrs(
+    String ip,
+    int port,
+    String pin,
+    Map<String, String> providerToBase64,
+  ) async {
+    if (providerToBase64.isEmpty) return true;
+    final items = <String, String>{};
+    for (final entry in providerToBase64.entries) {
+      final k = entry.key.trim().toLowerCase();
+      if (k.isEmpty) continue;
+      final v = entry.value;
+      if (v.isEmpty) continue;
+      items[k] = v;
+    }
+    if (items.isEmpty) return false;
+    try {
+      final response = await _client.post(
+        Uri.parse('http://$ip:$port/payment_qrs'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $pin',
+        },
+        body: jsonEncode({'items': items}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error uploading QRs to kiosk: $e');
       return false;
     }
   }
