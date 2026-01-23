@@ -15,14 +15,31 @@ class SyncKioskScreen extends StatefulWidget {
 
 class _SyncKioskScreenState extends State<SyncKioskScreen> {
   final KioskClientService _kioskService = KioskClientService();
+  late final MobileScannerController _scannerController;
   bool _isSyncing = false;
   String? _statusMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      formats: const [BarcodeFormat.qrCode],
+    );
+  }
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
 
   Future<void> _onQrDetect(BarcodeCapture capture) async {
     if (_isSyncing) return;
     final List<Barcode> barcodes = capture.barcodes;
     if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
       final String code = barcodes.first.rawValue!;
+      debugPrint('SyncKioskScreen qrDetected len=${code.length}');
       try {
         final Map<String, dynamic> data = jsonDecode(code);
         if (data.containsKey('ip') && data.containsKey('port')) {
@@ -38,6 +55,7 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
             }
             return;
           }
+          debugPrint('SyncKioskScreen parsed ip=$ip port=$port');
           final deviceId = data['deviceId'] as String?;
           setState(() {
             _isSyncing = true;
@@ -56,6 +74,7 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
           await _pairWithKiosk(ip, port, pin);
         }
       } catch (e) {
+        debugPrint('SyncKioskScreen qrDecodeFailed err=$e');
         // Not a valid JSON or Kiosk QR
         if (mounted) {
           setState(() {
@@ -128,9 +147,13 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
       _statusMessage = l10n.pairingKiosk(ip);
     });
 
+    debugPrint('SyncKioskScreen pairingStart ip=$ip port=$port pinLen=${pin.length}');
     final debugResult = await _kioskService.fetchDeviceIdDebug(ip, port, pin);
     final fetchedDeviceId = debugResult.deviceId;
     final success = fetchedDeviceId != null;
+    debugPrint(
+      'SyncKioskScreen pairingResult success=$success statusCode=${debugResult.statusCode} error=${debugResult.error}',
+    );
 
     if (!mounted) return;
     if (success) {
@@ -159,6 +182,62 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
     }
   }
 
+  Future<void> _manualPair() async {
+    if (_isSyncing) return;
+    final l10n = AppLocalizations.of(context)!;
+    final ipController = TextEditingController();
+    final portController = TextEditingController(text: '8081');
+
+    final pin = await _promptForPin();
+    if (!mounted) return;
+    if (pin == null) return;
+
+    final result = await showDialog<({String ip, int port})>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.pairKioskTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: ipController,
+              keyboardType: TextInputType.url,
+              decoration: const InputDecoration(labelText: 'IP'),
+            ),
+            TextField(
+              controller: portController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Port'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              final ip = ipController.text.trim();
+              final port = int.tryParse(portController.text.trim());
+              if (ip.isEmpty || port == null) {
+                Navigator.pop(context);
+                return;
+              }
+              Navigator.pop(context, (ip: ip, port: port));
+            },
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (result == null) return;
+    await _pairWithKiosk(result.ip, result.port, pin);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -169,6 +248,7 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
           Expanded(
             flex: 2,
             child: MobileScanner(
+              controller: _scannerController,
               onDetect: _onQrDetect,
             ),
           ),
@@ -184,7 +264,17 @@ class _SyncKioskScreenState extends State<SyncKioskScreen> {
                         Text(_statusMessage ?? l10n.scanBarcode),
                       ],
                     )
-                  : Text(l10n.scanKioskHint),
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(l10n.scanKioskHint),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: _manualPair,
+                          child: const Text('Manual Pair'),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ],
