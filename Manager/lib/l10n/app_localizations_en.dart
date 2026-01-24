@@ -78,6 +78,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get barcodeLabel => 'Barcode';
 
   @override
+  String get noBarcodeProduct => 'No barcode product';
+
+  @override
   String get saveProduct => 'Save Product';
 
   @override

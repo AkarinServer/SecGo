@@ -120,6 +120,25 @@ class DatabaseHelper {
     );
   }
 
+  Future<String> getNextNoBarcodeId() async {
+    final db = await instance.database;
+    final rows = await db.query(
+      'products',
+      columns: ['barcode'],
+      where: 'barcode LIKE ?',
+      whereArgs: const ['NB-%'],
+    );
+    var maxN = 0;
+    for (final row in rows) {
+      final raw = row['barcode']?.toString() ?? '';
+      if (!raw.startsWith('NB-')) continue;
+      final n = int.tryParse(raw.substring(3));
+      if (n == null) continue;
+      if (n > maxN) maxN = n;
+    }
+    return 'NB-${maxN + 1}';
+  }
+
   // Kiosk Methods
   Future<int> insertKiosk(Kiosk kiosk) async {
     final db = await instance.database;

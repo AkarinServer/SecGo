@@ -226,6 +226,24 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get noBarcodeProductsTitle => '无条码商品';
+
+  @override
+  String get noBarcodeProductsEmpty => '暂无无条码商品';
+
+  @override
+  String get categories => '分类';
+
+  @override
+  String get categoryAll => '全部';
+
+  @override
+  String get categoryUncategorized => '未分类';
+
+  @override
+  String get searchProducts => '搜索商品';
+
+  @override
   String get clear => '清除';
 
   @override

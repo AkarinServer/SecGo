@@ -64,6 +64,12 @@
   "searchApps": "Search apps",
   "noAppsFound": "No apps found",
   "homeAppOpenFailed": "Can't open {package}. Opening Launcher instead.",
+  "noBarcodeProductsTitle": "No Barcode Products",
+  "noBarcodeProductsEmpty": "No no-barcode products",
+  "categories": "Categories",
+  "categoryAll": "All",
+  "categoryUncategorized": "Uncategorized",
+  "searchProducts": "Search products",
   "clear": "Clear",
   "save": "Save"
 }

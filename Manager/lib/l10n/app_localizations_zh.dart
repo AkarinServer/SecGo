@@ -78,6 +78,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get barcodeLabel => '条形码';
 
   @override
+  String get noBarcodeProduct => '无条码商品';
+
+  @override
   String get saveProduct => '保存商品';
 
   @override

@@ -8,6 +8,7 @@ import 'package:kiosk/db/database_helper.dart';
 import 'package:kiosk/models/product.dart';
 import 'package:kiosk/models/order.dart' as model; // Alias to avoid conflict if needed
 import 'package:kiosk/screens/payment_screen.dart';
+import 'package:kiosk/screens/no_barcode_products_dialog.dart';
 import 'package:kiosk/screens/settings_screen.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
@@ -257,6 +258,24 @@ class _MainScreenState extends State<MainScreen> {
           },
         ),
       ),
+    );
+  }
+
+  Future<void> _openNoBarcodePicker() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return NoBarcodeProductsDialog(
+          onAdd: (product) {
+            _addToCart(product);
+            messenger.showSnackBar(
+              SnackBar(content: Text(l10n.addedProduct(product.name))),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -658,10 +677,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                         const SizedBox(width: 16),
                         TextButton.icon(
-                          onPressed: () {
-                            // No barcode selection
-                            // Placeholder
-                          },
+                          onPressed: _openNoBarcodePicker,
                           icon: const Icon(Icons.grid_view, color: Colors.grey),
                           label: Text(l10n.noBarcodeItem, style: const TextStyle(color: Colors.grey)),
                         ),
