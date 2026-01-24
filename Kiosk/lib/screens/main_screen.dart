@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Add intl for date formatting
 import 'package:kiosk/db/database_helper.dart';
@@ -622,13 +623,14 @@ class _MainScreenState extends State<MainScreen> {
                           icon: const Icon(Icons.grid_view, color: Colors.grey),
                           label: Text(l10n.noBarcodeItem, style: const TextStyle(color: Colors.grey)),
                         ),
-                        const SizedBox(width: 16),
-                        // Debug Scan Button
-                        IconButton(
-                          icon: const Icon(Icons.image_search, color: Colors.grey),
-                          onPressed: _testScanFile,
-                          tooltip: l10n.debugScanFile,
-                        ),
+                        if (kDebugMode) ...[
+                          const SizedBox(width: 16),
+                          IconButton(
+                            icon: const Icon(Icons.image_search, color: Colors.grey),
+                            onPressed: _testScanFile,
+                            tooltip: l10n.debugScanFile,
+                          ),
+                        ],
                          // Settings Button (Hidden access)
                         IconButton(
                           icon: const Icon(Icons.settings, color: Colors.grey),
