@@ -101,11 +101,11 @@ class _PinInputDialogState extends State<PinInputDialog> {
                       child: Column(
                         children: [
                           _buildRow(['1', '2', '3']),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           _buildRow(['4', '5', '6']),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           _buildRow(['7', '8', '9']),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           _buildBottomRow(l10n),
                         ],
                       ),
@@ -162,7 +162,7 @@ class _PinInputDialogState extends State<PinInputDialog> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.backspace, size: 28),
+                child: const Icon(Icons.backspace, size: 24),
               ),
             ),
           ),
@@ -192,7 +192,7 @@ class _PinInputDialogState extends State<PinInputDialog> {
           ],
         ),
         alignment: Alignment.center,
-        child: Text(label, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+        child: Text(label, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -207,7 +207,7 @@ class _PinInputDialogState extends State<PinInputDialog> {
           borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,
-        child: Text(label, style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+        child: Text(label, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }

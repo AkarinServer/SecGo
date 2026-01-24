@@ -172,7 +172,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                           Expanded(
                             child: _PinKey(
                               onTap: _onBackspace,
-                              child: const Icon(Icons.backspace, size: 28),
+                              child: const Icon(Icons.backspace, size: 24),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -183,7 +183,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                               label: l10n.clear,
                               color: Colors.orange,
                               textStyle: const TextStyle(
-                                fontSize: 18,
+                                fontSize: 16,
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -308,7 +308,7 @@ class _PinKey extends StatelessWidget {
         child: child ??
             Text(
               label!,
-              style: textStyle ?? const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: textStyle ?? const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
       ),
     );
