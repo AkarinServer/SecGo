@@ -244,6 +244,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchProducts => '搜索商品';
 
   @override
+  String get networkSettings => '网络设置';
+
+  @override
+  String get hotspot => '热点';
+
+  @override
+  String get hotspotHint => '开启热点用于配对';
+
+  @override
+  String get mobileData => '移动数据';
+
+  @override
+  String get mobileDataHint => '切换移动数据（可能受系统限制）';
+
+  @override
+  String get networkToggleFailed => '操作失败，正在打开系统设置…';
+
+  @override
   String get clear => '清除';
 
   @override

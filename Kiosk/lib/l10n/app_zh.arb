@@ -70,6 +70,12 @@
   "categoryAll": "全部",
   "categoryUncategorized": "未分类",
   "searchProducts": "搜索商品",
+  "networkSettings": "网络设置",
+  "hotspot": "热点",
+  "hotspotHint": "开启热点用于配对",
+  "mobileData": "移动数据",
+  "mobileDataHint": "切换移动数据（可能受系统限制）",
+  "networkToggleFailed": "操作失败，正在打开系统设置…",
   "clear": "清除",
   "save": "保存"
 }

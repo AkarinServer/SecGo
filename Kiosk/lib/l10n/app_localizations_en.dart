@@ -248,6 +248,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchProducts => 'Search products';
 
   @override
+  String get networkSettings => 'Network';
+
+  @override
+  String get hotspot => 'Hotspot';
+
+  @override
+  String get hotspotHint => 'Enable hotspot for pairing';
+
+  @override
+  String get mobileData => 'Mobile data';
+
+  @override
+  String get mobileDataHint => 'Toggle mobile data (may be restricted)';
+
+  @override
+  String get networkToggleFailed => 'Action failed. Opening system settings…';
+
+  @override
   String get clear => 'Clear';
 
   @override

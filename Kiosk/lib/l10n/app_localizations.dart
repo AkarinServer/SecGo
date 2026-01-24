@@ -524,6 +524,42 @@ abstract class AppLocalizations {
   /// **'Search products'**
   String get searchProducts;
 
+  /// No description provided for @networkSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get networkSettings;
+
+  /// No description provided for @hotspot.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot'**
+  String get hotspot;
+
+  /// No description provided for @hotspotHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable hotspot for pairing'**
+  String get hotspotHint;
+
+  /// No description provided for @mobileData.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile data'**
+  String get mobileData;
+
+  /// No description provided for @mobileDataHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle mobile data (may be restricted)'**
+  String get mobileDataHint;
+
+  /// No description provided for @networkToggleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Action failed. Opening system settings…'**
+  String get networkToggleFailed;
+
   /// No description provided for @clear.
   ///
   /// In en, this message translates to:

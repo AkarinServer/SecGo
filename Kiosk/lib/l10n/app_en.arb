@@ -70,6 +70,12 @@
   "categoryAll": "All",
   "categoryUncategorized": "Uncategorized",
   "searchProducts": "Search products",
+  "networkSettings": "Network",
+  "hotspot": "Hotspot",
+  "hotspotHint": "Enable hotspot for pairing",
+  "mobileData": "Mobile data",
+  "mobileDataHint": "Toggle mobile data (may be restricted)",
+  "networkToggleFailed": "Action failed. Opening system settings…",
   "clear": "Clear",
   "save": "Save"
 }

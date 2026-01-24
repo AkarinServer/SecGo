@@ -6,8 +6,11 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.net.wifi.WifiManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -17,6 +20,7 @@ import org.json.JSONObject
 
 class MainActivity : FlutterActivity() {
   private var receiver: BroadcastReceiver? = null
+  private var localHotspotReservation: WifiManager.LocalOnlyHotspotReservation? = null
 
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
@@ -100,6 +104,94 @@ class MainActivity : FlutterActivity() {
         else -> result.notImplemented()
       }
     }
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NETWORK_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getHotspotEnabled" -> result.success(localHotspotReservation != null)
+        "setHotspotEnabled" -> {
+          val enabled = call.argument<Boolean>("enabled") == true
+          if (!enabled) {
+            localHotspotReservation?.close()
+            localHotspotReservation = null
+            result.success(true)
+            return@setMethodCallHandler
+          }
+
+          if (localHotspotReservation != null) {
+            result.success(true)
+            return@setMethodCallHandler
+          }
+
+          if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            result.success(false)
+            return@setMethodCallHandler
+          }
+
+          try {
+            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            wifiManager.startLocalOnlyHotspot(
+              object : WifiManager.LocalOnlyHotspotCallback() {
+                override fun onStarted(reservation: WifiManager.LocalOnlyHotspotReservation) {
+                  localHotspotReservation = reservation
+                  result.success(true)
+                }
+
+                override fun onStopped() {
+                  localHotspotReservation?.close()
+                  localHotspotReservation = null
+                }
+
+                override fun onFailed(reason: Int) {
+                  localHotspotReservation?.close()
+                  localHotspotReservation = null
+                  result.success(false)
+                }
+              },
+              Handler(Looper.getMainLooper()),
+            )
+          } catch (_: Exception) {
+            result.success(false)
+          }
+        }
+        "openHotspotSettings" -> {
+          try {
+            startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+          } catch (_: Exception) {
+            startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+          }
+          result.success(true)
+        }
+        "getMobileDataEnabled" -> {
+          val enabled = try {
+            Settings.Global.getInt(contentResolver, "mobile_data", 0) == 1
+          } catch (_: Exception) {
+            false
+          }
+          result.success(enabled)
+        }
+        "setMobileDataEnabled" -> {
+          val enabled = call.argument<Boolean>("enabled") == true
+          val ok = try {
+            Settings.Global.putInt(contentResolver, "mobile_data", if (enabled) 1 else 0)
+          } catch (_: Exception) {
+            false
+          }
+          result.success(ok)
+        }
+        "openInternetSettings" -> {
+          try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+              startActivity(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } else {
+              startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+          } catch (_: Exception) {
+          }
+          result.success(true)
+        }
+        else -> result.notImplemented()
+      }
+    }
   }
 
   override fun onCreate(savedInstanceState: android.os.Bundle?) {
@@ -169,6 +261,8 @@ class MainActivity : FlutterActivity() {
       }
     }
     receiver = null
+    localHotspotReservation?.close()
+    localHotspotReservation = null
     super.onDestroy()
   }
 
@@ -271,6 +365,7 @@ class MainActivity : FlutterActivity() {
   companion object {
     private const val METHOD_CHANNEL = "com.secgo.kiosk/notification_listener"
     private const val EVENTS_CHANNEL = "com.secgo.kiosk/notifications"
+    private const val NETWORK_CHANNEL = "com.secgo.kiosk/network"
 
     @Volatile
     private var eventSink: EventChannel.EventSink? = null

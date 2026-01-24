@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
 
 import 'package:kiosk/services/android_launcher_service.dart';
+import 'package:kiosk/services/android_network_service.dart';
 import 'package:kiosk/services/settings_service.dart';
 import 'package:kiosk/services/restore_notifier.dart';
 
@@ -20,12 +21,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _pinController = TextEditingController();
   final SettingsService _settingsService = SettingsService(); // Add SettingsService
   final AndroidLauncherService _launcherService = AndroidLauncherService();
+  final AndroidNetworkService _networkService = AndroidNetworkService();
   bool _isServerRunning = false;
   bool _isLoading = false;
   bool _showRestoreComplete = false;
   String? _qrData;
   String? _homeAppPackage;
   String? _homeAppLabel;
+  bool _hotspotEnabled = false;
+  bool _mobileDataEnabled = false;
+  bool _networkBusy = false;
 
   @override
   void initState() {
@@ -42,6 +47,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _startServer();
       });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadNetworkState();
+    });
   }
 
   @override
@@ -262,6 +270,106 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _showRestoreComplete = false);
   }
 
+  Future<void> _loadNetworkState() async {
+    try {
+      final hotspot = await _networkService.getHotspotEnabled();
+      final mobile = await _networkService.getMobileDataEnabled();
+      if (!mounted) return;
+      setState(() {
+        _hotspotEnabled = hotspot;
+        _mobileDataEnabled = mobile;
+      });
+    } catch (_) {
+    }
+  }
+
+  Future<void> _setHotspot(bool enabled) async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _networkBusy = true);
+    try {
+      final ok = await _networkService.setHotspotEnabled(enabled);
+      if (!ok) {
+        await _networkService.openHotspotSettings();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.networkToggleFailed)),
+          );
+        }
+      }
+    } catch (_) {
+      try {
+        await _networkService.openHotspotSettings();
+      } catch (_) {
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.networkToggleFailed)),
+        );
+      }
+    } finally {
+      await _loadNetworkState();
+      if (mounted) setState(() => _networkBusy = false);
+    }
+  }
+
+  Future<void> _setMobileData(bool enabled) async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _networkBusy = true);
+    try {
+      final ok = await _networkService.setMobileDataEnabled(enabled);
+      if (!ok) {
+        await _networkService.openInternetSettings();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.networkToggleFailed)),
+          );
+        }
+      }
+    } catch (_) {
+      try {
+        await _networkService.openInternetSettings();
+      } catch (_) {
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.networkToggleFailed)),
+        );
+      }
+    } finally {
+      await _loadNetworkState();
+      if (mounted) setState(() => _networkBusy = false);
+    }
+  }
+
+  Widget _buildNetworkSection() {
+    final l10n = AppLocalizations.of(context)!;
+    return Card(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.wifi_tethering_outlined),
+            title: Text(l10n.networkSettings),
+          ),
+          const Divider(height: 1),
+          SwitchListTile(
+            value: _hotspotEnabled,
+            onChanged: _networkBusy ? null : _setHotspot,
+            title: Text(l10n.hotspot),
+            subtitle: Text(l10n.hotspotHint),
+          ),
+          const Divider(height: 1),
+          SwitchListTile(
+            value: _mobileDataEnabled,
+            onChanged: _networkBusy ? null : _setMobileData,
+            title: Text(l10n.mobileData),
+            subtitle: Text(l10n.mobileDataHint),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _startServer() async {
     final l10n = AppLocalizations.of(context)!;
     if (_pinController.text.length < 4) {
@@ -313,9 +421,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: _isLoading 
                 ? const CircularProgressIndicator() 
                 : _isServerRunning
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                  ? SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                         Text(
                           l10n.kioskReadyToSync,
                           style: TextStyle(fontSize: 24, color: Colors.green),
@@ -340,7 +449,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 24),
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 520),
-                          child: _buildLauncherSection(),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildLauncherSection(),
+                              const SizedBox(height: 16),
+                              _buildNetworkSection(),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
@@ -350,11 +466,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           },
                           child: Text(l10n.close),
                         ),
-                      ],
+                        ],
+                      ),
                     )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                  : SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                         const Icon(Icons.error_outline, size: 60, color: Colors.red),
                         const SizedBox(height: 20),
                         Text(
@@ -369,14 +487,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 24),
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 520),
-                          child: _buildLauncherSection(),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildLauncherSection(),
+                              const SizedBox(height: 16),
+                              _buildNetworkSection(),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _startServer,
                           child: Text(l10n.retry),
                         ),
-                      ],
+                        ],
+                      ),
                     ),
             ),
           ),
