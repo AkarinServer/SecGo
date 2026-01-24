@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:kiosk/services/server/kiosk_server.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -9,6 +10,7 @@ import 'package:kiosk/services/android_network_service.dart';
 import 'package:kiosk/services/settings_service.dart';
 import 'package:kiosk/services/restore_notifier.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -17,7 +19,7 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
   late final KioskServerService _serverService;
   final TextEditingController _pinController = TextEditingController();
   final SettingsService _settingsService = SettingsService(); // Add SettingsService
@@ -27,6 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isLoading = false;
   bool _showRestoreComplete = false;
   String? _qrData;
+  String? _deviceId;
   String? _homeAppPackage;
   String? _homeAppLabel;
   bool _hotspotEnabled = false;
@@ -35,10 +38,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _hotspotPassword;
   String? _hotspotMode;
   bool _networkBusy = false;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  Timer? _networkDebounce;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _serverService = KioskServerService(onRestoreComplete: _onRestoreComplete);
     _homeAppPackage = _settingsService.getHomeAppPackage();
     _homeAppLabel = _settingsService.getHomeAppLabel();
@@ -54,13 +60,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadNetworkState();
     });
+
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((_) {
+      _onNetworkChanged();
+    });
   }
 
   @override
   void dispose() {
+    _networkDebounce?.cancel();
+    _connectivitySub?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _serverService.stopServer();
     _pinController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _onNetworkChanged();
+    }
   }
 
   Future<bool> _confirmPin() async {
@@ -290,14 +310,80 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  void _onNetworkChanged() {
+    _networkDebounce?.cancel();
+    _networkDebounce = Timer(const Duration(milliseconds: 600), () async {
+      if (!mounted) return;
+      await _loadNetworkState();
+      await _refreshServerStatus();
+    });
+  }
+
+  void _updateQrData() {
+    final ip = _serverService.ipAddress;
+    final pin = _pinController.text;
+    if (ip == null || pin.length < 4) {
+      _qrData = null;
+      return;
+    }
+    _qrData = jsonEncode({
+      'ip': ip,
+      'port': _serverService.port,
+      'pin': pin,
+      'deviceId': _deviceId,
+    });
+  }
+
+  Future<void> _refreshServerStatus() async {
+    if (_isLoading) return;
+    if (_serverService.isRunning) {
+      await _serverService.refreshIpAddress();
+      if (!mounted) return;
+      setState(() {
+        _isServerRunning = _serverService.ipAddress != null;
+        _updateQrData();
+      });
+      return;
+    }
+
+    await _serverService.refreshIpAddress();
+    if (!mounted) return;
+    if (_serverService.ipAddress == null) {
+      setState(() {
+        _isServerRunning = false;
+        _qrData = null;
+      });
+      return;
+    }
+
+    if (_pinController.text.length >= 4) {
+      await _startServer(silent: true);
+    }
+  }
+
   Future<void> _setHotspot(bool enabled) async {
     final l10n = AppLocalizations.of(context)!;
     if (_hotspotMode == 'system') {
-      await _networkService.openHotspotSettings();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.hotspotChangeInSystemSettings)),
-        );
+      setState(() => _networkBusy = true);
+      try {
+        final ok = await _networkService.setHotspotEnabled(enabled);
+        if (!ok) {
+          await _networkService.openHotspotSettings();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.hotspotChangeInSystemSettings)),
+            );
+          }
+        }
+      } catch (_) {
+        try {
+          await _networkService.openHotspotSettings();
+        } catch (_) {
+        }
+      } finally {
+        await _loadNetworkState();
+        await _refreshServerStatus();
+        if (mounted) setState(() => _networkBusy = false);
       }
       return;
     }
@@ -353,6 +439,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } finally {
       await _loadNetworkState();
+      await _refreshServerStatus();
       if (mounted) setState(() => _networkBusy = false);
     }
   }
@@ -382,6 +469,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } finally {
       await _loadNetworkState();
+      await _refreshServerStatus();
       if (mounted) setState(() => _networkBusy = false);
     }
   }
@@ -389,7 +477,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildNetworkSection() {
     final l10n = AppLocalizations.of(context)!;
     final hotspotSubtitle = _hotspotMode == 'system'
-        ? '${l10n.hotspotEnabledInSystemSettings}\n${l10n.hotspotChangeInSystemSettings}'
+        ? (_hotspotSsid != null
+            ? '${l10n.hotspotEnabledInSystemSettings}\n${l10n.ssidLabel}: ${_hotspotSsid ?? '-'}\n${l10n.passwordLabel}: ${_hotspotPassword ?? '-'}'
+            : '${l10n.hotspotEnabledInSystemSettings}\n${l10n.hotspotChangeInSystemSettings}')
         : (_hotspotEnabled && _hotspotSsid != null
             ? '${l10n.hotspotHint}\n${l10n.ssidLabel}: ${_hotspotSsid ?? '-'}\n${l10n.passwordLabel}: ${_hotspotPassword ?? '-'}'
             : l10n.hotspotHint);
@@ -420,41 +510,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _startServer() async {
+  Future<void> _startServer({bool silent = false}) async {
     final l10n = AppLocalizations.of(context)!;
+    if (_isLoading) return;
     if (_pinController.text.length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.pinLength)),
-      );
+      if (!silent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.pinLength)),
+        );
+      }
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
-    final deviceId = await _settingsService.getOrCreateDeviceId();
-    await _serverService.startServer(_pinController.text, deviceId: deviceId);
+    _deviceId ??= await _settingsService.getOrCreateDeviceId();
+    await _serverService.startServer(_pinController.text, deviceId: _deviceId);
     
     if (mounted) {
       setState(() {
         _isLoading = false;
-        if (_serverService.ipAddress != null) {
-          _isServerRunning = true;
-          // QR Data format: {"ip": "192.168.x.x", "port": 8081, "pin": "1234"}
-          _qrData = jsonEncode({
-            'ip': _serverService.ipAddress,
-            'port': _serverService.port,
-            'pin': _pinController.text,
-            'deviceId': deviceId,
-          });
-        } else {
-           // Optional: Show error if IP is null (e.g. no wifi)
-           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.serverNoIp)),
-          );
-        }
+        _isServerRunning = _serverService.ipAddress != null;
+        _updateQrData();
       });
+      if (!silent && _serverService.ipAddress == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.serverNoIp)),
+        );
+      }
     }
   }
 

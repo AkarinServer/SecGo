@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.net.wifi.WifiConfiguration
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -115,12 +116,23 @@ class MainActivity : FlutterActivity() {
         "getHotspotEnabled" -> result.success(localHotspotReservation != null || isSystemHotspotEnabled())
         "getHotspotInfo" -> {
           val systemEnabled = isSystemHotspotEnabled()
+          val systemConfig = if (systemEnabled && localHotspotReservation == null) getSystemHotspotConfig() else null
           result.success(
             mapOf(
               "enabled" to (localHotspotReservation != null || systemEnabled),
               "mode" to (if (localHotspotReservation != null) "local" else if (systemEnabled) "system" else null),
-              "ssid" to (if (localHotspotReservation != null) localHotspotSsid else null),
-              "password" to (if (localHotspotReservation != null) localHotspotPassword else null),
+              "ssid" to
+                (if (localHotspotReservation != null) {
+                  localHotspotSsid
+                } else {
+                  systemConfig?.first
+                }),
+              "password" to
+                (if (localHotspotReservation != null) {
+                  localHotspotPassword
+                } else {
+                  systemConfig?.second
+                }),
             ),
           )
         }
@@ -141,8 +153,14 @@ class MainActivity : FlutterActivity() {
             localHotspotReservation = null
             localHotspotSsid = null
             localHotspotPassword = null
-            result.success(true)
-            return@setMethodCallHandler
+            if (isSystemHotspotEnabled()) {
+              val ok = disableSystemHotspot()
+              result.success(ok)
+              return@setMethodCallHandler
+            } else {
+              result.success(true)
+              return@setMethodCallHandler
+            }
           }
 
           if (isSystemHotspotEnabled()) {
@@ -368,6 +386,38 @@ class MainActivity : FlutterActivity() {
         state == 13 || state == 12
       }
     } catch (_: Exception) {
+      false
+    }
+  }
+
+  private fun getSystemHotspotConfig(): kotlin.Pair<String?, String?>? {
+    return try {
+      val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+      val m = wifiManager.javaClass.getDeclaredMethod("getWifiApConfiguration")
+      m.isAccessible = true
+      val config = m.invoke(wifiManager) as? WifiConfiguration ?: return null
+      kotlin.Pair(config.SSID, config.preSharedKey)
+    } catch (_: Exception) {
+      null
+    }
+  }
+
+  private fun disableSystemHotspot(): Boolean {
+    return try {
+      val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+      try {
+        val m = wifiManager.javaClass.getDeclaredMethod("setWifiApEnabled", WifiConfiguration::class.java, Boolean::class.java)
+        m.isAccessible = true
+        m.invoke(wifiManager, null, false)
+        true
+      } catch (_: Exception) {
+        val m = wifiManager.javaClass.getDeclaredMethod("stopSoftAp")
+        m.isAccessible = true
+        m.invoke(wifiManager)
+        true
+      }
+    } catch (_: Exception) {
+      lastHotspotErrorMessage = "system_disable_blocked"
       false
     }
   }
