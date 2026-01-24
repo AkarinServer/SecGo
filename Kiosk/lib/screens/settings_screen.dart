@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:kiosk/services/server/kiosk_server.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
+import 'package:kiosk/screens/pin_input_dialog.dart';
 
 import 'package:kiosk/services/android_launcher_service.dart';
 import 'package:kiosk/services/settings_service.dart';
@@ -52,40 +53,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<bool> _confirmPin() async {
-    final l10n = AppLocalizations.of(context)!;
     final expected = _settingsService.getPin() ?? _pinController.text.trim();
-    final controller = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(l10n.adminConfirm),
-          content: TextField(
-            controller: controller,
-            obscureText: true,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: l10n.enterPin),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () {
-                if (controller.text.trim() == expected) {
-                  Navigator.pop(context, true);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.invalidPin)),
-                  );
-                }
-              },
-              child: Text(l10n.confirm),
-            ),
-          ],
-        );
-      },
+      barrierDismissible: false,
+      builder: (context) => PinInputDialog(expectedPin: expected),
     );
     return ok ?? false;
   }

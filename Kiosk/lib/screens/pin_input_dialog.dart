@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
 
 class PinInputDialog extends StatefulWidget {
-  final String? expectedPin; // If provided, validates internally
+  final String? expectedPin;
 
   const PinInputDialog({
     super.key,
@@ -17,7 +17,7 @@ class _PinInputDialogState extends State<PinInputDialog> {
   String _input = '';
 
   void _onKeyTap(String key) {
-    if (_input.length >= 6) return; // Limit PIN length
+    if (_input.length >= 6) return;
     setState(() {
       _input += key;
     });
@@ -60,21 +60,19 @@ class _PinInputDialogState extends State<PinInputDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: 400, // Narrower than barcode dialog
+        width: 420,
         height: 550,
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-             // Header
             Text(
-              l10n.adminConfirm, 
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)
+              l10n.adminConfirm,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(l10n.enterPin, style: const TextStyle(color: Colors.grey)),
             const Divider(height: 32),
             
-            // Input Display (Masked)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -94,26 +92,24 @@ class _PinInputDialogState extends State<PinInputDialog> {
             ),
             const SizedBox(height: 32),
             
-            // Numeric Keypad
-            Expanded(
+            SizedBox(
+              height: 260,
               child: GridView.count(
                 crossAxisCount: 3,
-                childAspectRatio: 1.5,
+                childAspectRatio: 1.55,
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 10,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   for (var i = 1; i <= 9; i++)
                     _buildKey(i.toString()),
-                  _buildActionButton(l10n.clear, Colors.orange, _onClear),
-                  _buildKey('0'),
                   _buildBackspace(),
+                  _buildKey('0'),
+                  _buildActionButton(l10n.clear, Colors.orange, _onClear),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            
-            // Actions
             Row(
               children: [
                 Expanded(child: _buildActionButton(l10n.cancel, Colors.grey, () => Navigator.pop(context))),
@@ -136,7 +132,11 @@ class _PinInputDialogState extends State<PinInputDialog> {
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
-             BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 2, offset: const Offset(1, 1)),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 2,
+              offset: const Offset(1, 1),
+            ),
           ],
         ),
         alignment: Alignment.center,
