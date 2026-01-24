@@ -16,21 +16,46 @@ class ProductListScreen extends StatefulWidget {
 
 class _ProductListScreenState extends State<ProductListScreen> {
   List<Product> _products = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
   final KioskConnectionService _connectionService = KioskConnectionService();
   final KioskClientService _kioskService = KioskClientService();
+  final TextEditingController _searchController = TextEditingController();
+  List<Product> _filteredProducts = [];
 
   @override
   void initState() {
     super.initState();
     _connectionService.addListener(_onConnectionChange);
+    _searchController.addListener(_onSearchChanged);
     _loadProducts();
   }
 
   @override
   void dispose() {
     _connectionService.removeListener(_onConnectionChange);
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      setState(() => _filteredProducts = _products);
+      return;
+    }
+    setState(() {
+      _filteredProducts = _products.where((p) {
+        final name = p.name.toLowerCase();
+        final barcode = p.barcode.toLowerCase();
+        final pinyin = p.pinyin?.toLowerCase() ?? '';
+        final initials = p.initials?.toLowerCase() ?? '';
+        
+        return name.contains(query) || 
+               barcode.contains(query) || 
+               pinyin.contains(query) || 
+               initials.contains(query);
+      }).toList();
+    });
   }
 
   void _onConnectionChange() {
@@ -45,8 +70,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
       if (!mounted) return;
       setState(() {
         _products = products;
+        _filteredProducts = products;
         _isLoading = false;
       });
+      // Re-apply search if exists
+      if (_searchController.text.isNotEmpty) {
+        _onSearchChanged();
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -147,36 +177,51 @@ class _ProductListScreenState extends State<ProductListScreen> {
       appBar: AppBar(title: Text(l10n.addProduct)), // Reuse "Add Product" label or "Products"
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _products.isEmpty
-              ? Center(child: Text(l10n.noProductsFound))
-              : ListView.builder(
-                  itemCount: _products.length,
-                  itemBuilder: (context, index) {
-                    final product = _products[index];
-                    final tile = ListTile(
-                      key: ValueKey(product.barcode),
-                      title: Text(product.name),
-                      subtitle: Text(product.barcode),
-                      trailing: Text(currencyFormat.format(product.price)),
-                      onTap: isConnected ? () => _navigateToAddEdit(barcode: product.barcode) : null,
-                      enabled: isConnected,
-                    );
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                     controller: _searchController,
+                     decoration: InputDecoration(
+                       labelText: l10n.searchProducts,
+                       prefixIcon: const Icon(Icons.search),
+                       border: const OutlineInputBorder(),
+                     ),
+                   ),
+                ),
+                Expanded(
+                  child: _filteredProducts.isEmpty
+                      ? Center(child: Text(l10n.noProductsFound))
+                      : ListView.builder(
+                          itemCount: _filteredProducts.length,
+                          itemBuilder: (context, index) {
+                            final product = _filteredProducts[index];
+                            final tile = ListTile(
+                              key: ValueKey(product.barcode),
+                              title: Text(product.name),
+                              subtitle: Text(product.barcode),
+                              trailing: Text(currencyFormat.format(product.price)),
+                              onTap: isConnected ? () => _navigateToAddEdit(barcode: product.barcode) : null,
+                              enabled: isConnected,
+                            );
 
-                    if (!isConnected) {
-                      return tile;
-                    }
+                            if (!isConnected) {
+                              return tile;
+                            }
 
-                    return Dismissible(
-                      key: ValueKey('dismiss_${product.barcode}'),
-                      direction: DismissDirection.endToStart,
-                      confirmDismiss: (_) => _confirmDelete(product),
-                      onDismissed: (_) {
-                        setState(() {
-                          _products.removeAt(index);
-                        });
-                        _deleteProduct(product);
-                      },
-                      background: const SizedBox.shrink(),
+                            return Dismissible(
+                              key: ValueKey('dismiss_${product.barcode}'),
+                              direction: DismissDirection.endToStart,
+                              confirmDismiss: (_) => _confirmDelete(product),
+                              onDismissed: (_) {
+                                setState(() {
+                                  _products.remove(product); // Remove from main list
+                                  _filteredProducts.removeAt(index);
+                                });
+                                _deleteProduct(product);
+                              },
+                              background: const SizedBox.shrink(),
                       secondaryBackground: Container(
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -190,6 +235,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     );
                   },
                 ),
+        ),
+      ],
+    ),
       floatingActionButton: isConnected 
           ? FloatingActionButton(
               onPressed: () => _navigateToAddEdit(),

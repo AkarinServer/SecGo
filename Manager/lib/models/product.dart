@@ -18,6 +18,10 @@ class Product {
   final String? size;
   @HiveField(6)
   final String? type;
+  @HiveField(7)
+  final String? pinyin;
+  @HiveField(8)
+  final String? initials;
 
   Product({
     required this.barcode,
@@ -27,6 +31,8 @@ class Product {
     this.brand,
     this.size,
     this.type,
+    this.pinyin,
+    this.initials,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -38,6 +44,8 @@ class Product {
       brand: json['brand'],
       size: json['size'],
       type: json['type'],
+      pinyin: json['pinyin'],
+      initials: json['initials'],
     );
   }
 
@@ -50,6 +58,8 @@ class Product {
       'brand': brand,
       'size': size,
       'type': type,
+      'pinyin': pinyin,
+      'initials': initials,
     };
   }
 }

@@ -197,6 +197,9 @@ class AppLocalizationsZh extends AppLocalizations {
       'https://barcode100.market.alicloudapi.com/getBarcode?Code=';
 
   @override
+  String get searchProducts => '搜索商品';
+
+  @override
   String get cancel => '取消';
 
   @override

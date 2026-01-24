@@ -31,7 +31,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4, // Incremented version
+      version: 5, // Incremented version for search fields
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -46,7 +46,9 @@ class DatabaseHelper {
         last_updated INTEGER NOT NULL,
         brand TEXT,
         size TEXT,
-        type TEXT
+        type TEXT,
+        pinyin TEXT,
+        initials TEXT
       )
     ''');
     
@@ -78,6 +80,10 @@ class DatabaseHelper {
     }
     if (oldVersion < 4) {
       await db.execute('ALTER TABLE kiosks ADD COLUMN device_id TEXT');
+    }
+    if (oldVersion < 5) {
+      await db.execute('ALTER TABLE products ADD COLUMN pinyin TEXT');
+      await db.execute('ALTER TABLE products ADD COLUMN initials TEXT');
     }
   }
 
