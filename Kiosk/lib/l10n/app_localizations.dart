@@ -542,6 +542,24 @@ abstract class AppLocalizations {
   /// **'Enable hotspot for pairing'**
   String get hotspotHint;
 
+  /// No description provided for @ssidLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SSID'**
+  String get ssidLabel;
+
+  /// No description provided for @passwordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordLabel;
+
+  /// No description provided for @locationPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is required to enable hotspot.'**
+  String get locationPermissionRequired;
+
   /// No description provided for @mobileData.
   ///
   /// In en, this message translates to:

@@ -257,6 +257,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hotspotHint => 'Enable hotspot for pairing';
 
   @override
+  String get ssidLabel => 'SSID';
+
+  @override
+  String get passwordLabel => 'Password';
+
+  @override
+  String get locationPermissionRequired =>
+      'Location permission is required to enable hotspot.';
+
+  @override
   String get mobileData => 'Mobile data';
 
   @override

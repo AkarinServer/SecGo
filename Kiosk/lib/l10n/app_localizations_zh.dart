@@ -253,6 +253,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get hotspotHint => '开启热点用于配对';
 
   @override
+  String get ssidLabel => '名称';
+
+  @override
+  String get passwordLabel => '密码';
+
+  @override
+  String get locationPermissionRequired => '开启热点需要定位权限。';
+
+  @override
   String get mobileData => '移动数据';
 
   @override

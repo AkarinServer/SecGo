@@ -21,6 +21,8 @@ import org.json.JSONObject
 class MainActivity : FlutterActivity() {
   private var receiver: BroadcastReceiver? = null
   private var localHotspotReservation: WifiManager.LocalOnlyHotspotReservation? = null
+  private var localHotspotSsid: String? = null
+  private var localHotspotPassword: String? = null
 
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
@@ -108,11 +110,22 @@ class MainActivity : FlutterActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NETWORK_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "getHotspotEnabled" -> result.success(localHotspotReservation != null)
+        "getHotspotInfo" -> {
+          result.success(
+            mapOf(
+              "enabled" to (localHotspotReservation != null),
+              "ssid" to localHotspotSsid,
+              "password" to localHotspotPassword,
+            ),
+          )
+        }
         "setHotspotEnabled" -> {
           val enabled = call.argument<Boolean>("enabled") == true
           if (!enabled) {
             localHotspotReservation?.close()
             localHotspotReservation = null
+            localHotspotSsid = null
+            localHotspotPassword = null
             result.success(true)
             return@setMethodCallHandler
           }
@@ -133,17 +146,24 @@ class MainActivity : FlutterActivity() {
               object : WifiManager.LocalOnlyHotspotCallback() {
                 override fun onStarted(reservation: WifiManager.LocalOnlyHotspotReservation) {
                   localHotspotReservation = reservation
+                  val config = reservation.wifiConfiguration
+                  localHotspotSsid = config?.SSID
+                  localHotspotPassword = config?.preSharedKey
                   result.success(true)
                 }
 
                 override fun onStopped() {
                   localHotspotReservation?.close()
                   localHotspotReservation = null
+                  localHotspotSsid = null
+                  localHotspotPassword = null
                 }
 
                 override fun onFailed(reason: Int) {
                   localHotspotReservation?.close()
                   localHotspotReservation = null
+                  localHotspotSsid = null
+                  localHotspotPassword = null
                   result.success(false)
                 }
               },
@@ -263,6 +283,8 @@ class MainActivity : FlutterActivity() {
     receiver = null
     localHotspotReservation?.close()
     localHotspotReservation = null
+    localHotspotSsid = null
+    localHotspotPassword = null
     super.onDestroy()
   }
 

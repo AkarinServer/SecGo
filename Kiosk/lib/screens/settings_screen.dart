@@ -8,6 +8,7 @@ import 'package:kiosk/services/android_launcher_service.dart';
 import 'package:kiosk/services/android_network_service.dart';
 import 'package:kiosk/services/settings_service.dart';
 import 'package:kiosk/services/restore_notifier.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -30,6 +31,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _homeAppLabel;
   bool _hotspotEnabled = false;
   bool _mobileDataEnabled = false;
+  String? _hotspotSsid;
+  String? _hotspotPassword;
   bool _networkBusy = false;
 
   @override
@@ -272,11 +275,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadNetworkState() async {
     try {
-      final hotspot = await _networkService.getHotspotEnabled();
+      final hotspotInfo = await _networkService.getHotspotInfo();
       final mobile = await _networkService.getMobileDataEnabled();
       if (!mounted) return;
       setState(() {
-        _hotspotEnabled = hotspot;
+        _hotspotEnabled = hotspotInfo.enabled;
+        _hotspotSsid = hotspotInfo.ssid;
+        _hotspotPassword = hotspotInfo.password;
         _mobileDataEnabled = mobile;
       });
     } catch (_) {
@@ -285,6 +290,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _setHotspot(bool enabled) async {
     final l10n = AppLocalizations.of(context)!;
+    if (enabled) {
+      final status = await Permission.location.status;
+      if (!status.isGranted) {
+        final next = await Permission.location.request();
+        if (!next.isGranted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.locationPermissionRequired)),
+            );
+          }
+          return;
+        }
+      }
+    }
     setState(() => _networkBusy = true);
     try {
       final ok = await _networkService.setHotspotEnabled(enabled);
@@ -343,6 +362,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildNetworkSection() {
     final l10n = AppLocalizations.of(context)!;
+    final hotspotSubtitle = _hotspotEnabled && _hotspotSsid != null
+        ? '${l10n.hotspotHint}\n${l10n.ssidLabel}: ${_hotspotSsid ?? '-'}\n${l10n.passwordLabel}: ${_hotspotPassword ?? '-'}'
+        : l10n.hotspotHint;
     return Card(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -356,7 +378,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: _hotspotEnabled,
             onChanged: _networkBusy ? null : _setHotspot,
             title: Text(l10n.hotspot),
-            subtitle: Text(l10n.hotspotHint),
+            subtitle: Text(hotspotSubtitle),
           ),
           const Divider(height: 1),
           SwitchListTile(
