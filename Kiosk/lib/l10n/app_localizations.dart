@@ -524,6 +524,84 @@ abstract class AppLocalizations {
   /// **'Search products'**
   String get searchProducts;
 
+  /// No description provided for @networkSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get networkSettings;
+
+  /// No description provided for @hotspot.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot'**
+  String get hotspot;
+
+  /// No description provided for @hotspotHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable hotspot for pairing'**
+  String get hotspotHint;
+
+  /// No description provided for @ssidLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SSID'**
+  String get ssidLabel;
+
+  /// No description provided for @passwordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordLabel;
+
+  /// No description provided for @locationPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is required to enable hotspot.'**
+  String get locationPermissionRequired;
+
+  /// No description provided for @locationServiceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please turn on Location service to enable hotspot.'**
+  String get locationServiceRequired;
+
+  /// No description provided for @hotspotFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot failed: {reason}'**
+  String hotspotFailedWithReason(Object reason);
+
+  /// No description provided for @hotspotEnabledInSystemSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot is already enabled in system settings.'**
+  String get hotspotEnabledInSystemSettings;
+
+  /// No description provided for @hotspotChangeInSystemSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Change hotspot in system settings.'**
+  String get hotspotChangeInSystemSettings;
+
+  /// No description provided for @mobileData.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile data'**
+  String get mobileData;
+
+  /// No description provided for @mobileDataHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle mobile data (may be restricted)'**
+  String get mobileDataHint;
+
+  /// No description provided for @networkToggleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Action failed. Opening system settings…'**
+  String get networkToggleFailed;
+
   /// No description provided for @clear.
   ///
   /// In en, this message translates to:

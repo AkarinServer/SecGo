@@ -244,6 +244,47 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchProducts => '搜索商品';
 
   @override
+  String get networkSettings => '网络设置';
+
+  @override
+  String get hotspot => '热点';
+
+  @override
+  String get hotspotHint => '开启热点用于配对';
+
+  @override
+  String get ssidLabel => '名称';
+
+  @override
+  String get passwordLabel => '密码';
+
+  @override
+  String get locationPermissionRequired => '开启热点需要定位权限。';
+
+  @override
+  String get locationServiceRequired => '请开启定位服务后再打开热点。';
+
+  @override
+  String hotspotFailedWithReason(Object reason) {
+    return '热点开启失败：$reason';
+  }
+
+  @override
+  String get hotspotEnabledInSystemSettings => '系统热点已开启。';
+
+  @override
+  String get hotspotChangeInSystemSettings => '请在系统设置中修改热点。';
+
+  @override
+  String get mobileData => '移动数据';
+
+  @override
+  String get mobileDataHint => '切换移动数据（可能受系统限制）';
+
+  @override
+  String get networkToggleFailed => '操作失败，正在打开系统设置…';
+
+  @override
   String get clear => '清除';
 
   @override
