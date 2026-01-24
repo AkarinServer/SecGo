@@ -112,13 +112,15 @@ class MainActivity : FlutterActivity() {
 
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NETWORK_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
-        "getHotspotEnabled" -> result.success(localHotspotReservation != null)
+        "getHotspotEnabled" -> result.success(localHotspotReservation != null || isSystemHotspotEnabled())
         "getHotspotInfo" -> {
+          val systemEnabled = isSystemHotspotEnabled()
           result.success(
             mapOf(
-              "enabled" to (localHotspotReservation != null),
-              "ssid" to localHotspotSsid,
-              "password" to localHotspotPassword,
+              "enabled" to (localHotspotReservation != null || systemEnabled),
+              "mode" to (if (localHotspotReservation != null) "local" else if (systemEnabled) "system" else null),
+              "ssid" to (if (localHotspotReservation != null) localHotspotSsid else null),
+              "password" to (if (localHotspotReservation != null) localHotspotPassword else null),
             ),
           )
         }
@@ -139,6 +141,11 @@ class MainActivity : FlutterActivity() {
             localHotspotReservation = null
             localHotspotSsid = null
             localHotspotPassword = null
+            result.success(true)
+            return@setMethodCallHandler
+          }
+
+          if (isSystemHotspotEnabled()) {
             result.success(true)
             return@setMethodCallHandler
           }
@@ -345,6 +352,24 @@ class MainActivity : FlutterActivity() {
   private fun isNotificationListenerEnabled(): Boolean {
     val enabled = Settings.Secure.getString(contentResolver, "enabled_notification_listeners") ?: return false
     return enabled.contains(packageName)
+  }
+
+  private fun isSystemHotspotEnabled(): Boolean {
+    return try {
+      val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+      try {
+        val m = wifiManager.javaClass.getDeclaredMethod("isWifiApEnabled")
+        m.isAccessible = true
+        (m.invoke(wifiManager) as? Boolean) == true
+      } catch (_: Exception) {
+        val m = wifiManager.javaClass.getDeclaredMethod("getWifiApState")
+        m.isAccessible = true
+        val state = (m.invoke(wifiManager) as? Int) ?: return false
+        state == 13 || state == 12
+      }
+    } catch (_: Exception) {
+      false
+    }
   }
 
   private fun getAlipayNotificationState(): Map<String, Any> {

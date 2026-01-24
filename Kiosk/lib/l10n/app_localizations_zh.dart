@@ -270,6 +270,12 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get hotspotEnabledInSystemSettings => '系统热点已开启。';
+
+  @override
+  String get hotspotChangeInSystemSettings => '请在系统设置中修改热点。';
+
+  @override
   String get mobileData => '移动数据';
 
   @override

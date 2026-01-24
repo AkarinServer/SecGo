@@ -572,6 +572,18 @@ abstract class AppLocalizations {
   /// **'Hotspot failed: {reason}'**
   String hotspotFailedWithReason(Object reason);
 
+  /// No description provided for @hotspotEnabledInSystemSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot is already enabled in system settings.'**
+  String get hotspotEnabledInSystemSettings;
+
+  /// No description provided for @hotspotChangeInSystemSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Change hotspot in system settings.'**
+  String get hotspotChangeInSystemSettings;
+
   /// No description provided for @mobileData.
   ///
   /// In en, this message translates to:

@@ -276,6 +276,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get hotspotEnabledInSystemSettings =>
+      'Hotspot is already enabled in system settings.';
+
+  @override
+  String get hotspotChangeInSystemSettings =>
+      'Change hotspot in system settings.';
+
+  @override
   String get mobileData => 'Mobile data';
 
   @override

@@ -33,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _mobileDataEnabled = false;
   String? _hotspotSsid;
   String? _hotspotPassword;
+  String? _hotspotMode;
   bool _networkBusy = false;
 
   @override
@@ -280,6 +281,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       setState(() {
         _hotspotEnabled = hotspotInfo.enabled;
+        _hotspotMode = hotspotInfo.mode;
         _hotspotSsid = hotspotInfo.ssid;
         _hotspotPassword = hotspotInfo.password;
         _mobileDataEnabled = mobile;
@@ -290,6 +292,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _setHotspot(bool enabled) async {
     final l10n = AppLocalizations.of(context)!;
+    if (_hotspotMode == 'system') {
+      await _networkService.openHotspotSettings();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.hotspotChangeInSystemSettings)),
+        );
+      }
+      return;
+    }
     if (enabled) {
       final status = await Permission.location.status;
       if (!status.isGranted) {
@@ -377,9 +388,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildNetworkSection() {
     final l10n = AppLocalizations.of(context)!;
-    final hotspotSubtitle = _hotspotEnabled && _hotspotSsid != null
-        ? '${l10n.hotspotHint}\n${l10n.ssidLabel}: ${_hotspotSsid ?? '-'}\n${l10n.passwordLabel}: ${_hotspotPassword ?? '-'}'
-        : l10n.hotspotHint;
+    final hotspotSubtitle = _hotspotMode == 'system'
+        ? '${l10n.hotspotEnabledInSystemSettings}\n${l10n.hotspotChangeInSystemSettings}'
+        : (_hotspotEnabled && _hotspotSsid != null
+            ? '${l10n.hotspotHint}\n${l10n.ssidLabel}: ${_hotspotSsid ?? '-'}\n${l10n.passwordLabel}: ${_hotspotPassword ?? '-'}'
+            : l10n.hotspotHint);
     return Card(
       child: Column(
         mainAxisSize: MainAxisSize.min,

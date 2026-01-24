@@ -2,11 +2,13 @@ import 'package:flutter/services.dart';
 
 class HotspotInfo {
   final bool enabled;
+  final String? mode;
   final String? ssid;
   final String? password;
 
   const HotspotInfo({
     required this.enabled,
+    required this.mode,
     required this.ssid,
     required this.password,
   });
@@ -14,6 +16,7 @@ class HotspotInfo {
   factory HotspotInfo.fromMap(Map<dynamic, dynamic> map) {
     return HotspotInfo(
       enabled: map['enabled'] == true,
+      mode: map['mode']?.toString(),
       ssid: map['ssid']?.toString(),
       password: map['password']?.toString(),
     );
@@ -31,7 +34,7 @@ class AndroidNetworkService {
   Future<HotspotInfo> getHotspotInfo() async {
     final info = await _channel.invokeMethod<dynamic>('getHotspotInfo');
     if (info is Map) return HotspotInfo.fromMap(info);
-    return const HotspotInfo(enabled: false, ssid: null, password: null);
+    return const HotspotInfo(enabled: false, mode: null, ssid: null, password: null);
   }
 
   Future<bool> setHotspotEnabled(bool enabled) async {
