@@ -440,6 +440,12 @@ abstract class AppLocalizations {
   /// **'https://barcode100.market.alicloudapi.com/getBarcode?Code='**
   String get productApiUrlHint;
 
+  /// No description provided for @searchProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Products'**
+  String get searchProducts;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:

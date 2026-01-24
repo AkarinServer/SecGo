@@ -56,6 +56,7 @@
   "settingsSaved": "设置已保存",
   "productApiUrlLabel": "商品API地址",
   "productApiUrlHint": "https://barcode100.market.alicloudapi.com/getBarcode?Code=",
+  "searchProducts": "搜索商品",
   "cancel": "取消",
   "remove": "移除",
   "connectKioskToEdit": "请先连接自助终端后再添加或编辑商品。",

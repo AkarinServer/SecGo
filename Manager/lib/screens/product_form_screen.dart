@@ -6,7 +6,8 @@ import 'package:manager/services/api_service.dart';
 import 'package:manager/db/database_helper.dart';
 import 'package:manager/services/kiosk_connection_service.dart';
 import 'package:manager/services/kiosk_client/kiosk_client.dart';
-import 'package:manager/l10n/app_localizations.dart'; // Re-added
+import 'package:manager/l10n/app_localizations.dart';
+import 'package:lpinyin/lpinyin.dart'; // Proper import placement
 
 class ProductFormScreen extends StatefulWidget {
   final String? initialBarcode;
@@ -178,11 +179,26 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             ? _barcodeController.text
             : await DatabaseHelper.instance.getNextNoBarcodeId())
         : _barcodeController.text.trim();
+
+    final name = _nameController.text;
+    // Generate Pinyin and Initials
+    String? pinyin;
+    String? initials;
+    if (name.isNotEmpty) {
+      // PinyinHelper.getPinyin returns full pinyin with separator
+      // e.g. "ke kou ke le"
+      pinyin = PinyinHelper.getPinyin(name, separator: ' ', format: PinyinFormat.WITHOUT_TONE).toLowerCase();
+      // Initials: "kkkl"
+      initials = PinyinHelper.getShortPinyin(name).toLowerCase();
+    }
+
     final product = Product(
       barcode: barcode,
-      name: _nameController.text,
+      name: name,
       price: double.parse(_priceController.text.trim()),
       lastUpdated: DateTime.now().millisecondsSinceEpoch,
+      pinyin: pinyin,
+      initials: initials,
     );
 
     try {
