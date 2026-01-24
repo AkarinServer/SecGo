@@ -62,12 +62,11 @@ class _PinInputDialogState extends State<PinInputDialog> {
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 420,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisSize: MainAxisSize.max,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 l10n.adminConfirm,
@@ -114,14 +113,22 @@ class _PinInputDialogState extends State<PinInputDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildActionButton(
-                      l10n.cancel,
-                      Colors.grey,
-                      () => Navigator.pop(context, false),
+                    child: SizedBox(
+                      height: 56,
+                      child: _buildActionButton(
+                        l10n.cancel,
+                        Colors.grey,
+                        () => Navigator.pop(context, false),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildActionButton(l10n.confirm, Colors.blue, _onConfirm)),
+                  Expanded(
+                    child: SizedBox(
+                      height: 56,
+                      child: _buildActionButton(l10n.confirm, Colors.blue, _onConfirm),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -178,7 +185,7 @@ class _PinInputDialogState extends State<PinInputDialog> {
           borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,
-        child: Text(label, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+        child: Text(label, style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }

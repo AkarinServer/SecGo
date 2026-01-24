@@ -127,7 +127,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
               ),
               const SizedBox(height: 20),
               SizedBox(
-                height: 260,
+                height: 240,
                 child: GridView.count(
                   crossAxisCount: 3,
                   childAspectRatio: 2.35,
@@ -162,11 +162,11 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
               ElevatedButton(
                 onPressed: _savePin,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  minimumSize: const Size.fromHeight(56),
                 ),
                 child: Text(
                   l10n.saveAndContinue,
-                  style: const TextStyle(fontSize: 18),
+                  style: const TextStyle(fontSize: 20),
                 ),
               ),
             ],
