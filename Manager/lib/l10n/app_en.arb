@@ -56,6 +56,7 @@
   "settingsSaved": "Settings saved",
   "productApiUrlLabel": "Product API URL",
   "productApiUrlHint": "https://barcode100.market.alicloudapi.com/getBarcode?Code=",
+  "searchProducts": "Search Products",
   "cancel": "Cancel",
   "remove": "Remove",
   "connectKioskToEdit": "Connect to a kiosk to add or edit products.",

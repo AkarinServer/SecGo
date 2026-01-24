@@ -198,6 +198,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'https://barcode100.market.alicloudapi.com/getBarcode?Code=';
 
   @override
+  String get searchProducts => 'Search Products';
+
+  @override
   String get cancel => 'Cancel';
 
   @override
