@@ -4,6 +4,7 @@ import 'package:kiosk/services/server/kiosk_server.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:kiosk/l10n/app_localizations.dart';
 
+import 'package:kiosk/services/android_launcher_service.dart';
 import 'package:kiosk/services/settings_service.dart';
 import 'package:kiosk/services/restore_notifier.dart';
 
@@ -18,15 +19,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final KioskServerService _serverService;
   final TextEditingController _pinController = TextEditingController();
   final SettingsService _settingsService = SettingsService(); // Add SettingsService
+  final AndroidLauncherService _launcherService = AndroidLauncherService();
   bool _isServerRunning = false;
   bool _isLoading = false;
   bool _showRestoreComplete = false;
   String? _qrData;
+  String? _homeAppPackage;
+  String? _homeAppLabel;
 
   @override
   void initState() {
     super.initState();
     _serverService = KioskServerService(onRestoreComplete: _onRestoreComplete);
+    _homeAppPackage = _settingsService.getHomeAppPackage();
+    _homeAppLabel = _settingsService.getHomeAppLabel();
     // Pre-fill PIN if available
     final savedPin = _settingsService.getPin();
     if (savedPin != null) {
@@ -41,7 +47,205 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _serverService.stopServer();
+    _pinController.dispose();
     super.dispose();
+  }
+
+  Future<bool> _confirmPin() async {
+    final l10n = AppLocalizations.of(context)!;
+    final expected = _settingsService.getPin() ?? _pinController.text.trim();
+    final controller = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(l10n.adminConfirm),
+          content: TextField(
+            controller: controller,
+            obscureText: true,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: l10n.enterPin),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                if (controller.text.trim() == expected) {
+                  Navigator.pop(context, true);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.invalidPin)),
+                  );
+                }
+              },
+              child: Text(l10n.confirm),
+            ),
+          ],
+        );
+      },
+    );
+    return ok ?? false;
+  }
+
+  Future<void> _pickHomeApp() async {
+    final l10n = AppLocalizations.of(context)!;
+    final apps = await _launcherService.listLaunchableApps();
+    apps.sort((a, b) {
+      final al = (a['label'] ?? a['packageName'] ?? '').toLowerCase();
+      final bl = (b['label'] ?? b['packageName'] ?? '').toLowerCase();
+      return al.compareTo(bl);
+    });
+
+    if (!mounted) return;
+    final result = await showDialog<Map<String, String>?>(
+      context: context,
+      builder: (context) {
+        var query = '';
+        final searchController = TextEditingController();
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final filtered = query.isEmpty
+                ? apps
+                : apps.where((e) {
+                    final label = (e['label'] ?? '').toLowerCase();
+                    final pkg = (e['packageName'] ?? '').toLowerCase();
+                    final q = query.toLowerCase();
+                    return label.contains(q) || pkg.contains(q);
+                  }).toList();
+
+            return AlertDialog(
+              title: Text(l10n.homeAppTitle),
+              content: SizedBox(
+                width: 520,
+                height: 520,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchApps,
+                        prefixIcon: const Icon(Icons.search),
+                      ),
+                      onChanged: (v) => setState(() => query = v.trim()),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(child: Text(l10n.noAppsFound))
+                          : ListView.builder(
+                              itemCount: filtered.length + 1,
+                              itemBuilder: (context, index) {
+                                if (index == 0) {
+                                  final selected = _homeAppPackage == null;
+                                  return ListTile(
+                                    leading: const Icon(Icons.home_outlined),
+                                    title: Text(l10n.launcherDefault),
+                                    trailing: selected ? const Icon(Icons.check) : null,
+                                    onTap: () => Navigator.pop(context, {'packageName': '', 'label': ''}),
+                                  );
+                                }
+                                final app = filtered[index - 1];
+                                final pkg = app['packageName'] ?? '';
+                                final label = app['label'] ?? pkg;
+                                final selected = _homeAppPackage == pkg;
+                                return ListTile(
+                                  title: Text(label),
+                                  subtitle: Text(pkg),
+                                  trailing: selected ? const Icon(Icons.check) : null,
+                                  onTap: () => Navigator.pop(context, {'packageName': pkg, 'label': label}),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, null),
+                  child: Text(l10n.cancel),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (!mounted) return;
+    if (result == null) return;
+    final pkg = (result['packageName'] ?? '').trim();
+    final label = (result['label'] ?? '').trim();
+    if (pkg.isEmpty) {
+      await _settingsService.clearHomeAppSelection();
+      if (!mounted) return;
+      setState(() {
+        _homeAppPackage = null;
+        _homeAppLabel = null;
+      });
+      return;
+    }
+    await _settingsService.setHomeAppPackage(pkg);
+    await _settingsService.setHomeAppLabel(label.isEmpty ? pkg : label);
+    if (!mounted) return;
+    setState(() {
+      _homeAppPackage = pkg;
+      _homeAppLabel = label.isEmpty ? pkg : label;
+    });
+  }
+
+  Future<void> _openLauncher() async {
+    final l10n = AppLocalizations.of(context)!;
+    final ok = await _confirmPin();
+    if (!ok) return;
+
+    await _settingsService.setPendingPaymentOrderId(null);
+
+    final pkg = _settingsService.getHomeAppPackage();
+    bool launched = false;
+    if (pkg != null && pkg.isNotEmpty) {
+      launched = await _launcherService.openApp(pkg);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.homeAppOpenFailed(pkg))),
+        );
+      }
+    }
+    if (!launched) {
+      await _launcherService.openLauncherHome();
+    }
+
+    if (!mounted) return;
+    Navigator.pop(context, 'reset');
+  }
+
+  Widget _buildLauncherSection() {
+    final l10n = AppLocalizations.of(context)!;
+    final target = _homeAppLabel ?? _homeAppPackage ?? l10n.launcherDefault;
+    return Card(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.home_outlined),
+            title: Text(l10n.openLauncher),
+            subtitle: Text(l10n.launcherTarget(target)),
+            onTap: _openLauncher,
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.apps_outlined),
+            title: Text(l10n.homeAppTitle),
+            subtitle: Text(_homeAppLabel ?? _homeAppPackage ?? l10n.homeAppNotSet),
+            onTap: _pickHomeApp,
+          ),
+        ],
+      ),
+    );
   }
 
   void _onRestoreComplete() {
@@ -133,7 +337,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _serverService.port,
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 24),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520),
+                          child: _buildLauncherSection(),
+                        ),
+                        const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
                             // Restart server logic or close page
@@ -157,7 +366,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           l10n.serverStartFailedMessage,
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 24),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520),
+                          child: _buildLauncherSection(),
+                        ),
+                        const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _startServer,
                           child: Text(l10n.retry),

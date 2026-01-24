@@ -427,6 +427,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refreshing data...'**
   String get returningHome;
+
+  /// No description provided for @openLauncher.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Launcher'**
+  String get openLauncher;
+
+  /// No description provided for @launcherTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target: {target}'**
+  String launcherTarget(Object target);
+
+  /// No description provided for @launcherDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Launcher'**
+  String get launcherDefault;
+
+  /// No description provided for @homeAppPackageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Home app package (optional)'**
+  String get homeAppPackageTitle;
+
+  /// No description provided for @homeAppPackageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. com.secgo.home'**
+  String get homeAppPackageHint;
+
+  /// No description provided for @homeAppNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set (use Launcher)'**
+  String get homeAppNotSet;
+
+  /// No description provided for @homeAppTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Home App (optional)'**
+  String get homeAppTitle;
+
+  /// No description provided for @searchApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Search apps'**
+  String get searchApps;
+
+  /// No description provided for @noAppsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No apps found'**
+  String get noAppsFound;
+
+  /// No description provided for @homeAppOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t open {package}. Opening Launcher instead.'**
+  String homeAppOpenFailed(Object package);
+
+  /// No description provided for @clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
 }
 
 class _AppLocalizationsDelegate

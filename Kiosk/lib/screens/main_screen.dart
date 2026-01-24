@@ -176,6 +176,48 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  Future<bool> _confirmAdminPin() async {
+    final expected = _settingsService.getPin();
+    if (expected == null || expected.isEmpty) return true;
+
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.adminConfirm),
+          content: TextField(
+            controller: controller,
+            obscureText: true,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: l10n.enterPin),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                if (controller.text.trim() == expected) {
+                  Navigator.pop(dialogContext, true);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.invalidPin)),
+                  );
+                }
+              },
+              child: Text(l10n.confirm),
+            ),
+          ],
+        );
+      },
+    );
+    return ok ?? false;
+  }
+
   Future<void> _resumePendingPaymentIfAny() async {
     if (!mounted) return;
     final pendingId = _settingsService.getPendingPaymentOrderId();
@@ -634,11 +676,18 @@ class _MainScreenState extends State<MainScreen> {
                          // Settings Button (Hidden access)
                         IconButton(
                           icon: const Icon(Icons.settings, color: Colors.grey),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
+                          onPressed: () async {
+                            final navigator = Navigator.of(context);
+                            final ok = await _confirmAdminPin();
+                            if (!ok || !mounted) return;
+                            final result = await navigator.push(
                               MaterialPageRoute(builder: (_) => const SettingsScreen()),
                             );
+                            if (!mounted) return;
+                            if (result == 'reset') {
+                              _clearCart();
+                              setState(() => _isProcessing = false);
+                            }
                           },
                         ),
                       ],
