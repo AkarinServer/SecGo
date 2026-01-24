@@ -8,6 +8,7 @@ import 'package:kiosk/db/database_helper.dart';
 import 'package:kiosk/models/product.dart';
 import 'package:kiosk/models/order.dart' as model; // Alias to avoid conflict if needed
 import 'package:kiosk/screens/payment_screen.dart';
+import 'package:kiosk/screens/manual_barcode_dialog.dart';
 import 'package:kiosk/screens/no_barcode_products_dialog.dart';
 import 'package:kiosk/screens/settings_screen.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -668,9 +669,14 @@ class _MainScreenState extends State<MainScreen> {
                     Row(
                       children: [
                         TextButton.icon(
-                          onPressed: () {
-                             // Manual barcode entry dialog
-                             // Placeholder
+                          onPressed: () async {
+                            final product = await showDialog<Product>(
+                              context: context,
+                              builder: (context) => const ManualBarcodeDialog(),
+                            );
+                            if (product != null) {
+                              _addToCart(product);
+                            }
                           },
                           icon: const Icon(Icons.keyboard, color: Colors.grey),
                           label: Text(l10n.inputBarcode, style: const TextStyle(color: Colors.grey)),
