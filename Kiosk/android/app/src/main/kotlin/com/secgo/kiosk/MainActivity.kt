@@ -5,9 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.location.LocationManager
+import android.net.wifi.WifiConfiguration
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.net.wifi.WifiManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -17,6 +22,11 @@ import org.json.JSONObject
 
 class MainActivity : FlutterActivity() {
   private var receiver: BroadcastReceiver? = null
+  private var localHotspotReservation: WifiManager.LocalOnlyHotspotReservation? = null
+  private var localHotspotSsid: String? = null
+  private var localHotspotPassword: String? = null
+  private var lastHotspotErrorCode: Int? = null
+  private var lastHotspotErrorMessage: String? = null
 
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
@@ -100,6 +110,185 @@ class MainActivity : FlutterActivity() {
         else -> result.notImplemented()
       }
     }
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NETWORK_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getHotspotEnabled" -> result.success(localHotspotReservation != null || isSystemHotspotEnabled())
+        "getHotspotInfo" -> {
+          val systemEnabled = isSystemHotspotEnabled()
+          val systemConfig = if (systemEnabled && localHotspotReservation == null) getSystemHotspotConfig() else null
+          result.success(
+            mapOf(
+              "enabled" to (localHotspotReservation != null || systemEnabled),
+              "mode" to (if (localHotspotReservation != null) "local" else if (systemEnabled) "system" else null),
+              "ssid" to
+                (if (localHotspotReservation != null) {
+                  localHotspotSsid
+                } else {
+                  systemConfig?.first
+                }),
+              "password" to
+                (if (localHotspotReservation != null) {
+                  localHotspotPassword
+                } else {
+                  systemConfig?.second
+                }),
+            ),
+          )
+        }
+        "getHotspotLastError" -> {
+          result.success(
+            mapOf(
+              "code" to lastHotspotErrorCode,
+              "message" to lastHotspotErrorMessage,
+            ),
+          )
+        }
+        "setHotspotEnabled" -> {
+          val enabled = call.argument<Boolean>("enabled") == true
+          lastHotspotErrorCode = null
+          lastHotspotErrorMessage = null
+          if (!enabled) {
+            localHotspotReservation?.close()
+            localHotspotReservation = null
+            localHotspotSsid = null
+            localHotspotPassword = null
+            if (isSystemHotspotEnabled()) {
+              val ok = disableSystemHotspot()
+              result.success(ok)
+              return@setMethodCallHandler
+            } else {
+              result.success(true)
+              return@setMethodCallHandler
+            }
+          }
+
+          if (isSystemHotspotEnabled()) {
+            result.success(true)
+            return@setMethodCallHandler
+          }
+
+          if (localHotspotReservation != null) {
+            result.success(true)
+            return@setMethodCallHandler
+          }
+
+          if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            lastHotspotErrorMessage = "unsupported_sdk"
+            result.success(false)
+            return@setMethodCallHandler
+          }
+
+          try {
+            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            if (!wifiManager.isWifiEnabled) {
+              try {
+                @Suppress("DEPRECATION")
+                wifiManager.isWifiEnabled = true
+              } catch (_: Exception) {
+              }
+            }
+
+            val locationManager = applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val locationEnabled =
+              try {
+                locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                  locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+              } catch (_: Exception) {
+                false
+              }
+            if (!locationEnabled) {
+              lastHotspotErrorMessage = "location_disabled"
+              result.success(false)
+              return@setMethodCallHandler
+            }
+
+            wifiManager.startLocalOnlyHotspot(
+              object : WifiManager.LocalOnlyHotspotCallback() {
+                override fun onStarted(reservation: WifiManager.LocalOnlyHotspotReservation) {
+                  localHotspotReservation = reservation
+                  val config = reservation.wifiConfiguration
+                  localHotspotSsid = config?.SSID
+                  localHotspotPassword = config?.preSharedKey
+                  result.success(true)
+                }
+
+                override fun onStopped() {
+                  localHotspotReservation?.close()
+                  localHotspotReservation = null
+                  localHotspotSsid = null
+                  localHotspotPassword = null
+                }
+
+                override fun onFailed(reason: Int) {
+                  localHotspotReservation?.close()
+                  localHotspotReservation = null
+                  localHotspotSsid = null
+                  localHotspotPassword = null
+                  lastHotspotErrorCode = reason
+                  lastHotspotErrorMessage =
+                    when (reason) {
+                      WifiManager.LocalOnlyHotspotCallback.ERROR_NO_CHANNEL -> "no_channel"
+                      WifiManager.LocalOnlyHotspotCallback.ERROR_TETHERING_DISALLOWED -> "tethering_disallowed"
+                      WifiManager.LocalOnlyHotspotCallback.ERROR_INCOMPATIBLE_MODE -> "incompatible_mode"
+                      else -> "failed_$reason"
+                    }
+                  result.success(false)
+                }
+              },
+              Handler(Looper.getMainLooper()),
+            )
+          } catch (_: Exception) {
+            lastHotspotErrorMessage = "exception"
+            result.success(false)
+          }
+        }
+        "openHotspotSettings" -> {
+          try {
+            startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+          } catch (_: Exception) {
+            startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+          }
+          result.success(true)
+        }
+        "openLocationSettings" -> {
+          try {
+            startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+          } catch (_: Exception) {
+          }
+          result.success(true)
+        }
+        "getMobileDataEnabled" -> {
+          val enabled = try {
+            Settings.Global.getInt(contentResolver, "mobile_data", 0) == 1
+          } catch (_: Exception) {
+            false
+          }
+          result.success(enabled)
+        }
+        "setMobileDataEnabled" -> {
+          val enabled = call.argument<Boolean>("enabled") == true
+          val ok = try {
+            Settings.Global.putInt(contentResolver, "mobile_data", if (enabled) 1 else 0)
+          } catch (_: Exception) {
+            false
+          }
+          result.success(ok)
+        }
+        "openInternetSettings" -> {
+          try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+              startActivity(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } else {
+              startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+          } catch (_: Exception) {
+          }
+          result.success(true)
+        }
+        else -> result.notImplemented()
+      }
+    }
   }
 
   override fun onCreate(savedInstanceState: android.os.Bundle?) {
@@ -169,12 +358,68 @@ class MainActivity : FlutterActivity() {
       }
     }
     receiver = null
+    localHotspotReservation?.close()
+    localHotspotReservation = null
+    localHotspotSsid = null
+    localHotspotPassword = null
+    lastHotspotErrorCode = null
+    lastHotspotErrorMessage = null
     super.onDestroy()
   }
 
   private fun isNotificationListenerEnabled(): Boolean {
     val enabled = Settings.Secure.getString(contentResolver, "enabled_notification_listeners") ?: return false
     return enabled.contains(packageName)
+  }
+
+  private fun isSystemHotspotEnabled(): Boolean {
+    return try {
+      val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+      try {
+        val m = wifiManager.javaClass.getDeclaredMethod("isWifiApEnabled")
+        m.isAccessible = true
+        (m.invoke(wifiManager) as? Boolean) == true
+      } catch (_: Exception) {
+        val m = wifiManager.javaClass.getDeclaredMethod("getWifiApState")
+        m.isAccessible = true
+        val state = (m.invoke(wifiManager) as? Int) ?: return false
+        state == 13 || state == 12
+      }
+    } catch (_: Exception) {
+      false
+    }
+  }
+
+  private fun getSystemHotspotConfig(): kotlin.Pair<String?, String?>? {
+    return try {
+      val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+      val m = wifiManager.javaClass.getDeclaredMethod("getWifiApConfiguration")
+      m.isAccessible = true
+      val config = m.invoke(wifiManager) as? WifiConfiguration ?: return null
+      kotlin.Pair(config.SSID, config.preSharedKey)
+    } catch (_: Exception) {
+      null
+    }
+  }
+
+  private fun disableSystemHotspot(): Boolean {
+    return try {
+      val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+      try {
+        val m = wifiManager.javaClass.getDeclaredMethod("setWifiApEnabled", WifiConfiguration::class.java, Boolean::class.java)
+        m.isAccessible = true
+        m.invoke(wifiManager, null, false)
+        true
+      } catch (_: Exception) {
+        val m = wifiManager.javaClass.getDeclaredMethod("stopSoftAp")
+        m.isAccessible = true
+        m.invoke(wifiManager)
+        true
+      }
+    } catch (_: Exception) {
+      lastHotspotErrorMessage = "system_disable_blocked"
+      false
+    }
   }
 
   private fun getAlipayNotificationState(): Map<String, Any> {
@@ -271,6 +516,7 @@ class MainActivity : FlutterActivity() {
   companion object {
     private const val METHOD_CHANNEL = "com.secgo.kiosk/notification_listener"
     private const val EVENTS_CHANNEL = "com.secgo.kiosk/notifications"
+    private const val NETWORK_CHANNEL = "com.secgo.kiosk/network"
 
     @Volatile
     private var eventSink: EventChannel.EventSink? = null

@@ -248,6 +248,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchProducts => 'Search products';
 
   @override
+  String get networkSettings => 'Network';
+
+  @override
+  String get hotspot => 'Hotspot';
+
+  @override
+  String get hotspotHint => 'Enable hotspot for pairing';
+
+  @override
+  String get ssidLabel => 'SSID';
+
+  @override
+  String get passwordLabel => 'Password';
+
+  @override
+  String get locationPermissionRequired =>
+      'Location permission is required to enable hotspot.';
+
+  @override
+  String get locationServiceRequired =>
+      'Please turn on Location service to enable hotspot.';
+
+  @override
+  String hotspotFailedWithReason(Object reason) {
+    return 'Hotspot failed: $reason';
+  }
+
+  @override
+  String get hotspotEnabledInSystemSettings =>
+      'Hotspot is already enabled in system settings.';
+
+  @override
+  String get hotspotChangeInSystemSettings =>
+      'Change hotspot in system settings.';
+
+  @override
+  String get mobileData => 'Mobile data';
+
+  @override
+  String get mobileDataHint => 'Toggle mobile data (may be restricted)';
+
+  @override
+  String get networkToggleFailed => 'Action failed. Opening system settings…';
+
+  @override
   String get clear => 'Clear';
 
   @override
