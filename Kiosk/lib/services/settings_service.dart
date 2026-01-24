@@ -9,6 +9,7 @@ class SettingsService {
   static const String _paymentQrsKey = 'payment_qrs';
   static const String _pendingPaymentOrderIdKey = 'pending_payment_order_id';
   static const String _homeAppPackageKey = 'home_app_package';
+  static const String _homeAppLabelKey = 'home_app_label';
 
   Future<void> init() async {
     await Hive.openBox(_boxName);
@@ -104,6 +105,29 @@ class SettingsService {
       return;
     }
     await _box.put(_homeAppPackageKey, v);
+  }
+
+  String? getHomeAppLabel() {
+    final v = _box.get(_homeAppLabelKey);
+    if (v is String) {
+      final s = v.trim();
+      return s.isEmpty ? null : s;
+    }
+    return null;
+  }
+
+  Future<void> setHomeAppLabel(String? label) async {
+    final v = label?.trim();
+    if (v == null || v.isEmpty) {
+      await _box.delete(_homeAppLabelKey);
+      return;
+    }
+    await _box.put(_homeAppLabelKey, v);
+  }
+
+  Future<void> clearHomeAppSelection() async {
+    await _box.delete(_homeAppPackageKey);
+    await _box.delete(_homeAppLabelKey);
   }
 
 

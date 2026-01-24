@@ -216,6 +216,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeAppNotSet => 'Not set (use Launcher)';
 
   @override
+  String get homeAppTitle => 'Home App (optional)';
+
+  @override
+  String get searchApps => 'Search apps';
+
+  @override
+  String get noAppsFound => 'No apps found';
+
+  @override
   String homeAppOpenFailed(Object package) {
     return 'Can\'t open $package. Opening Launcher instead.';
   }

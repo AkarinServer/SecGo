@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
@@ -66,6 +67,31 @@ class MainActivity : FlutterActivity() {
           launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
           startActivity(launchIntent)
           result.success(true)
+        }
+        "listLaunchableApps" -> {
+          val intent =
+            Intent(Intent.ACTION_MAIN).apply {
+              addCategory(Intent.CATEGORY_LAUNCHER)
+            }
+
+          val activities =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+              packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
+            } else {
+              @Suppress("DEPRECATION")
+              packageManager.queryIntentActivities(intent, 0)
+            }
+
+          val resultList =
+            activities.map { ri ->
+              val label = ri.loadLabel(packageManager)?.toString() ?: ""
+              val pkg = ri.activityInfo?.packageName ?: ""
+              mapOf(
+                "packageName" to pkg,
+                "label" to label,
+              )
+            }.filter { it["packageName"]?.isNotBlank() == true }
+          result.success(resultList)
         }
         "openNotificationListenerSettings" -> {
           startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

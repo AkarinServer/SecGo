@@ -212,6 +212,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeAppNotSet => '未设置（使用桌面启动器）';
 
   @override
+  String get homeAppTitle => '首页应用（可选）';
+
+  @override
+  String get searchApps => '搜索应用';
+
+  @override
+  String get noAppsFound => '未找到应用';
+
+  @override
   String homeAppOpenFailed(Object package) {
     return '无法打开 $package，将打开桌面启动器。';
   }

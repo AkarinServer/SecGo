@@ -60,6 +60,9 @@
   "homeAppPackageTitle": "Home app package (optional)",
   "homeAppPackageHint": "e.g. com.secgo.home",
   "homeAppNotSet": "Not set (use Launcher)",
+  "homeAppTitle": "Home App (optional)",
+  "searchApps": "Search apps",
+  "noAppsFound": "No apps found",
   "homeAppOpenFailed": "Can't open {package}. Opening Launcher instead.",
   "clear": "Clear",
   "save": "Save"

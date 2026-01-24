@@ -60,6 +60,9 @@
   "homeAppPackageTitle": "首页应用包名（可选）",
   "homeAppPackageHint": "例如：com.secgo.home",
   "homeAppNotSet": "未设置（使用桌面启动器）",
+  "homeAppTitle": "首页应用（可选）",
+  "searchApps": "搜索应用",
+  "noAppsFound": "未找到应用",
   "homeAppOpenFailed": "无法打开 {package}，将打开桌面启动器。",
   "clear": "清除",
   "save": "保存"

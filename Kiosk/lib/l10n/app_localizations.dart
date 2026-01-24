@@ -464,6 +464,24 @@ abstract class AppLocalizations {
   /// **'Not set (use Launcher)'**
   String get homeAppNotSet;
 
+  /// No description provided for @homeAppTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Home App (optional)'**
+  String get homeAppTitle;
+
+  /// No description provided for @searchApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Search apps'**
+  String get searchApps;
+
+  /// No description provided for @noAppsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No apps found'**
+  String get noAppsFound;
+
   /// No description provided for @homeAppOpenFailed.
   ///
   /// In en, this message translates to:

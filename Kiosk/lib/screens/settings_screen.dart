@@ -25,12 +25,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showRestoreComplete = false;
   String? _qrData;
   String? _homeAppPackage;
+  String? _homeAppLabel;
 
   @override
   void initState() {
     super.initState();
     _serverService = KioskServerService(onRestoreComplete: _onRestoreComplete);
     _homeAppPackage = _settingsService.getHomeAppPackage();
+    _homeAppLabel = _settingsService.getHomeAppLabel();
     // Pre-fill PIN if available
     final savedPin = _settingsService.getPin();
     if (savedPin != null) {
@@ -88,42 +90,112 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ok ?? false;
   }
 
-  Future<void> _editHomeAppPackage() async {
+  Future<void> _pickHomeApp() async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: _homeAppPackage ?? '');
-    final result = await showDialog<String?>(
+    final apps = await _launcherService.listLaunchableApps();
+    apps.sort((a, b) {
+      final al = (a['label'] ?? a['packageName'] ?? '').toLowerCase();
+      final bl = (b['label'] ?? b['packageName'] ?? '').toLowerCase();
+      return al.compareTo(bl);
+    });
+
+    if (!mounted) return;
+    final result = await showDialog<Map<String, String>?>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(l10n.homeAppPackageTitle),
-          content: TextField(
-            controller: controller,
-            decoration: InputDecoration(hintText: l10n.homeAppPackageHint),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, null),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, ''),
-              child: Text(l10n.clear),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, controller.text),
-              child: Text(l10n.save),
-            ),
-          ],
+        var query = '';
+        final searchController = TextEditingController();
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final filtered = query.isEmpty
+                ? apps
+                : apps.where((e) {
+                    final label = (e['label'] ?? '').toLowerCase();
+                    final pkg = (e['packageName'] ?? '').toLowerCase();
+                    final q = query.toLowerCase();
+                    return label.contains(q) || pkg.contains(q);
+                  }).toList();
+
+            return AlertDialog(
+              title: Text(l10n.homeAppTitle),
+              content: SizedBox(
+                width: 520,
+                height: 520,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchApps,
+                        prefixIcon: const Icon(Icons.search),
+                      ),
+                      onChanged: (v) => setState(() => query = v.trim()),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(child: Text(l10n.noAppsFound))
+                          : ListView.builder(
+                              itemCount: filtered.length + 1,
+                              itemBuilder: (context, index) {
+                                if (index == 0) {
+                                  final selected = _homeAppPackage == null;
+                                  return ListTile(
+                                    leading: const Icon(Icons.home_outlined),
+                                    title: Text(l10n.launcherDefault),
+                                    trailing: selected ? const Icon(Icons.check) : null,
+                                    onTap: () => Navigator.pop(context, {'packageName': '', 'label': ''}),
+                                  );
+                                }
+                                final app = filtered[index - 1];
+                                final pkg = app['packageName'] ?? '';
+                                final label = app['label'] ?? pkg;
+                                final selected = _homeAppPackage == pkg;
+                                return ListTile(
+                                  title: Text(label),
+                                  subtitle: Text(pkg),
+                                  trailing: selected ? const Icon(Icons.check) : null,
+                                  onTap: () => Navigator.pop(context, {'packageName': pkg, 'label': label}),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, null),
+                  child: Text(l10n.cancel),
+                ),
+              ],
+            );
+          },
         );
       },
     );
 
     if (!mounted) return;
     if (result == null) return;
-    final value = result.trim();
-    await _settingsService.setHomeAppPackage(value.isEmpty ? null : value);
+    final pkg = (result['packageName'] ?? '').trim();
+    final label = (result['label'] ?? '').trim();
+    if (pkg.isEmpty) {
+      await _settingsService.clearHomeAppSelection();
+      if (!mounted) return;
+      setState(() {
+        _homeAppPackage = null;
+        _homeAppLabel = null;
+      });
+      return;
+    }
+    await _settingsService.setHomeAppPackage(pkg);
+    await _settingsService.setHomeAppLabel(label.isEmpty ? pkg : label);
     if (!mounted) return;
-    setState(() => _homeAppPackage = value.isEmpty ? null : value);
+    setState(() {
+      _homeAppPackage = pkg;
+      _homeAppLabel = label.isEmpty ? pkg : label;
+    });
   }
 
   Future<void> _openLauncher() async {
@@ -153,7 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildLauncherSection() {
     final l10n = AppLocalizations.of(context)!;
-    final target = _homeAppPackage ?? l10n.launcherDefault;
+    final target = _homeAppLabel ?? _homeAppPackage ?? l10n.launcherDefault;
     return Card(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -167,9 +239,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.apps_outlined),
-            title: Text(l10n.homeAppPackageTitle),
-            subtitle: Text(_homeAppPackage ?? l10n.homeAppNotSet),
-            onTap: _editHomeAppPackage,
+            title: Text(l10n.homeAppTitle),
+            subtitle: Text(_homeAppLabel ?? _homeAppPackage ?? l10n.homeAppNotSet),
+            onTap: _pickHomeApp,
           ),
         ],
       ),
