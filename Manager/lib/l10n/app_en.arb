@@ -20,6 +20,7 @@
   "productName": "Product Name",
   "price": "Price",
   "barcodeLabel": "Barcode",
+  "noBarcodeProduct": "No barcode product",
   "saveProduct": "Save Product",
   "save": "Save",
   "successSave": "Product saved successfully",

@@ -20,6 +20,7 @@
   "productName": "商品名称",
   "price": "价格",
   "barcodeLabel": "条形码",
+  "noBarcodeProduct": "无条码商品",
   "saveProduct": "保存商品",
   "save": "保存",
   "successSave": "商品保存成功",

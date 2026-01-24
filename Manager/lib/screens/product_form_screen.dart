@@ -27,6 +27,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   final KioskConnectionService _connectionService = KioskConnectionService();
   bool _isLoading = false;
   bool _isSaving = false;
+  bool _noBarcodeMode = false;
+  bool _isEditingExistingNoBarcode = false;
 
   @override
   void initState() {
@@ -39,6 +41,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     });
     if (widget.initialBarcode != null) {
       _barcodeController.text = widget.initialBarcode!;
+      _isEditingExistingNoBarcode = widget.initialBarcode!.startsWith('NB-');
+      _noBarcodeMode = _isEditingExistingNoBarcode;
       _loadProduct(widget.initialBarcode!);
     }
   }
@@ -169,8 +173,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
     _normalizePriceOnBlur();
     setState(() => _isSaving = true);
+    final barcode = _noBarcodeMode
+        ? (_isEditingExistingNoBarcode
+            ? _barcodeController.text
+            : await DatabaseHelper.instance.getNextNoBarcodeId())
+        : _barcodeController.text.trim();
     final product = Product(
-      barcode: _barcodeController.text,
+      barcode: barcode,
       name: _nameController.text,
       price: double.parse(_priceController.text.trim()),
       lastUpdated: DateTime.now().millisecondsSinceEpoch,
@@ -224,6 +233,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isConnected = _connectionService.hasConnectedKiosk;
+    final canToggleNoBarcode = widget.initialBarcode == null;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.addProduct)),
       body: _isLoading
@@ -243,25 +253,39 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _barcodeController,
-                            decoration: InputDecoration(labelText: l10n.barcodeLabel),
-                            enabled: isConnected && !_isSaving,
-                            validator: (value) =>
-                                value!.isEmpty ? l10n.barcodeRequired : null,
+                    if (canToggleNoBarcode)
+                      SwitchListTile(
+                        title: Text(l10n.noBarcodeProduct),
+                        value: _noBarcodeMode,
+                        onChanged: isConnected && !_isSaving
+                            ? (v) {
+                                setState(() {
+                                  _noBarcodeMode = v;
+                                  if (v) {
+                                    _barcodeController.clear();
+                                  }
+                                });
+                              }
+                            : null,
+                      ),
+                    if (!_noBarcodeMode)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _barcodeController,
+                              decoration: InputDecoration(labelText: l10n.barcodeLabel),
+                              enabled: isConnected && !_isSaving,
+                              validator: (value) =>
+                                  value!.isEmpty ? l10n.barcodeRequired : null,
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.qr_code_scanner),
-                          onPressed: isConnected && !_isSaving
-                              ? _scanBarcode
-                              : null,
-                        ),
-                      ],
-                    ),
+                          IconButton(
+                            icon: const Icon(Icons.qr_code_scanner),
+                            onPressed: isConnected && !_isSaving ? _scanBarcode : null,
+                          ),
+                        ],
+                      ),
                     TextFormField(
                       controller: _nameController,
                       decoration: InputDecoration(labelText: l10n.productName),

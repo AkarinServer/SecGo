@@ -224,6 +224,12 @@ abstract class AppLocalizations {
   /// **'Barcode'**
   String get barcodeLabel;
 
+  /// No description provided for @noBarcodeProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'No barcode product'**
+  String get noBarcodeProduct;
+
   /// No description provided for @saveProduct.
   ///
   /// In en, this message translates to:

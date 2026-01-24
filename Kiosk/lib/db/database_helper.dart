@@ -124,6 +124,17 @@ class DatabaseHelper {
     return maps.map((json) => Product.fromJson(json)).toList();
   }
 
+  Future<List<Product>> searchProducts(String query) async {
+    final db = await instance.database;
+    final maps = await db.query(
+      'products',
+      where: 'barcode LIKE ? OR name LIKE ?',
+      whereArgs: ['$query%', '%$query%'],
+      limit: 20,
+    );
+    return maps.map((json) => Product.fromJson(json)).toList();
+  }
+
   Future<void> clearProducts() async {
     final db = await instance.database;
     await db.delete('products');

@@ -64,6 +64,12 @@
   "searchApps": "搜索应用",
   "noAppsFound": "未找到应用",
   "homeAppOpenFailed": "无法打开 {package}，将打开桌面启动器。",
+  "noBarcodeProductsTitle": "无条码商品",
+  "noBarcodeProductsEmpty": "暂无无条码商品",
+  "categories": "分类",
+  "categoryAll": "全部",
+  "categoryUncategorized": "未分类",
+  "searchProducts": "搜索商品",
   "clear": "清除",
   "save": "保存"
 }

@@ -488,6 +488,42 @@ abstract class AppLocalizations {
   /// **'Can\'t open {package}. Opening Launcher instead.'**
   String homeAppOpenFailed(Object package);
 
+  /// No description provided for @noBarcodeProductsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Barcode Products'**
+  String get noBarcodeProductsTitle;
+
+  /// No description provided for @noBarcodeProductsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No no-barcode products'**
+  String get noBarcodeProductsEmpty;
+
+  /// No description provided for @categories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get categories;
+
+  /// No description provided for @categoryAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get categoryAll;
+
+  /// No description provided for @categoryUncategorized.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncategorized'**
+  String get categoryUncategorized;
+
+  /// No description provided for @searchProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search products'**
+  String get searchProducts;
+
   /// No description provided for @clear.
   ///
   /// In en, this message translates to:

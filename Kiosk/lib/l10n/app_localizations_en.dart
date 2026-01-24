@@ -230,6 +230,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get noBarcodeProductsTitle => 'No Barcode Products';
+
+  @override
+  String get noBarcodeProductsEmpty => 'No no-barcode products';
+
+  @override
+  String get categories => 'Categories';
+
+  @override
+  String get categoryAll => 'All';
+
+  @override
+  String get categoryUncategorized => 'Uncategorized';
+
+  @override
+  String get searchProducts => 'Search products';
+
+  @override
   String get clear => 'Clear';
 
   @override
