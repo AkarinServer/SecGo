@@ -59,66 +59,118 @@ class _PinInputDialogState extends State<PinInputDialog> {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 420,
-        height: 550,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Text(
-              l10n.adminConfirm,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(l10n.enterPin, style: const TextStyle(color: Colors.grey)),
-            const Divider(height: 32),
-            
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _input.isEmpty ? '----' : '*' * _input.length,
-                style: TextStyle(
-                  fontSize: 32,
-                  color: _input.isEmpty ? Colors.grey : Colors.black,
-                  letterSpacing: 8,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 32),
-            
-            SizedBox(
-              height: 260,
-              child: GridView.count(
-                crossAxisCount: 3,
-                childAspectRatio: 1.55,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  for (var i = 1; i <= 9; i++)
-                    _buildKey(i.toString()),
-                  _buildBackspace(),
-                  _buildKey('0'),
-                  _buildActionButton(l10n.clear, Colors.orange, _onClear),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildActionButton(l10n.cancel, Colors.grey, () => Navigator.pop(context))),
-                const SizedBox(width: 16),
-                Expanded(child: _buildActionButton(l10n.confirm, Colors.blue, _onConfirm)),
-              ],
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 420,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Text(
+                l10n.adminConfirm,
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(l10n.enterPin, style: const TextStyle(color: Colors.grey)),
+              const Divider(height: 24),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _input.isEmpty ? '----' : '*' * _input.length,
+                  style: TextStyle(
+                    fontSize: 32,
+                    color: _input.isEmpty ? Colors.grey : Colors.black,
+                    letterSpacing: 8,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _buildRow(['1', '2', '3']),
+                          const SizedBox(height: 10),
+                          _buildRow(['4', '5', '6']),
+                          const SizedBox(height: 10),
+                          _buildRow(['7', '8', '9']),
+                          const SizedBox(height: 10),
+                          _buildBottomRow(l10n),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildActionButton(
+                            l10n.cancel,
+                            Colors.grey,
+                            () => Navigator.pop(context, false),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildActionButton(l10n.confirm, Colors.blue, _onConfirm)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRow(List<String> labels) {
+    return Expanded(
+      child: Row(
+        children: [
+          Expanded(child: _buildKey(labels[0])),
+          const SizedBox(width: 10),
+          Expanded(child: _buildKey(labels[1])),
+          const SizedBox(width: 10),
+          Expanded(child: _buildKey(labels[2])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomRow(AppLocalizations l10n) {
+    return Expanded(
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: _onBackspace,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(Icons.backspace, size: 28),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: _buildKey('0')),
+          const SizedBox(width: 10),
+          Expanded(child: _buildActionButton(l10n.clear, Colors.orange, _onClear)),
+        ],
       ),
     );
   }
@@ -141,21 +193,6 @@ class _PinInputDialogState extends State<PinInputDialog> {
         ),
         alignment: Alignment.center,
         child: Text(label, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-  
-  Widget _buildBackspace() {
-    return InkWell(
-      onTap: _onBackspace,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[300],
-          borderRadius: BorderRadius.circular(8),
-        ),
-        alignment: Alignment.center,
-        child: const Icon(Icons.backspace, size: 28),
       ),
     );
   }
