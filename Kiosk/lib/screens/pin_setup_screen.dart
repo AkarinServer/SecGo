@@ -127,71 +127,33 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
               ),
               const SizedBox(height: 20),
               SizedBox(
-                height: 320,
-                child: Column(
+                height: 260,
+                child: GridView.count(
+                  crossAxisCount: 3,
+                  childAspectRatio: 2.35,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  physics: const NeverScrollableScrollPhysics(),
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(child: _PinKey(label: '1', onTap: () => _onKeyTap('1'))),
-                          const SizedBox(width: 10),
-                          Expanded(child: _PinKey(label: '2', onTap: () => _onKeyTap('2'))),
-                          const SizedBox(width: 10),
-                          Expanded(child: _PinKey(label: '3', onTap: () => _onKeyTap('3'))),
-                        ],
+                    for (var i = 1; i <= 9; i++)
+                      _PinKey(
+                        label: i.toString(),
+                        onTap: () => _onKeyTap(i.toString()),
                       ),
+                    _PinKey(
+                      onTap: _onBackspace,
+                      child: const Icon(Icons.backspace, size: 24),
                     ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(child: _PinKey(label: '4', onTap: () => _onKeyTap('4'))),
-                          const SizedBox(width: 10),
-                          Expanded(child: _PinKey(label: '5', onTap: () => _onKeyTap('5'))),
-                          const SizedBox(width: 10),
-                          Expanded(child: _PinKey(label: '6', onTap: () => _onKeyTap('6'))),
-                        ],
+                    _PinKey(label: '0', onTap: () => _onKeyTap('0')),
+                    _PinKey(
+                      label: l10n.clear,
+                      color: Colors.orange,
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(child: _PinKey(label: '7', onTap: () => _onKeyTap('7'))),
-                          const SizedBox(width: 10),
-                          Expanded(child: _PinKey(label: '8', onTap: () => _onKeyTap('8'))),
-                          const SizedBox(width: 10),
-                          Expanded(child: _PinKey(label: '9', onTap: () => _onKeyTap('9'))),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _PinKey(
-                              onTap: _onBackspace,
-                              child: const Icon(Icons.backspace, size: 24),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(child: _PinKey(label: '0', onTap: () => _onKeyTap('0'))),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _PinKey(
-                              label: l10n.clear,
-                              color: Colors.orange,
-                              textStyle: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              onTap: _onClear,
-                            ),
-                          ),
-                        ],
-                      ),
+                      onTap: _onClear,
                     ),
                   ],
                 ),
@@ -308,7 +270,7 @@ class _PinKey extends StatelessWidget {
         child: child ??
             Text(
               label!,
-              style: textStyle ?? const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: textStyle ?? const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
       ),
     );

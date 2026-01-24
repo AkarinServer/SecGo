@@ -75,10 +75,10 @@ class _PinInputDialogState extends State<PinInputDialog> {
               ),
               const SizedBox(height: 8),
               Text(l10n.enterPin, style: const TextStyle(color: Colors.grey)),
-              const Divider(height: 24),
+              const Divider(height: 20),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey),
                   borderRadius: BorderRadius.circular(8),
@@ -93,39 +93,36 @@ class _PinInputDialogState extends State<PinInputDialog> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: Column(
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 240,
+                child: GridView.count(
+                  crossAxisCount: 3,
+                  childAspectRatio: 2.35,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  physics: const NeverScrollableScrollPhysics(),
                   children: [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          _buildRow(['1', '2', '3']),
-                          const SizedBox(height: 8),
-                          _buildRow(['4', '5', '6']),
-                          const SizedBox(height: 8),
-                          _buildRow(['7', '8', '9']),
-                          const SizedBox(height: 8),
-                          _buildBottomRow(l10n),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildActionButton(
-                            l10n.cancel,
-                            Colors.grey,
-                            () => Navigator.pop(context, false),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildActionButton(l10n.confirm, Colors.blue, _onConfirm)),
-                      ],
-                    ),
+                    for (var i = 1; i <= 9; i++) _buildKey(i.toString()),
+                    _buildBackspaceKey(),
+                    _buildKey('0'),
+                    _buildActionButton(l10n.clear, Colors.orange, _onClear),
                   ],
                 ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionButton(
+                      l10n.cancel,
+                      Colors.grey,
+                      () => Navigator.pop(context, false),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildActionButton(l10n.confirm, Colors.blue, _onConfirm)),
+                ],
               ),
             ],
           ),
@@ -134,43 +131,17 @@ class _PinInputDialogState extends State<PinInputDialog> {
     );
   }
 
-  Widget _buildRow(List<String> labels) {
-    return Expanded(
-      child: Row(
-        children: [
-          Expanded(child: _buildKey(labels[0])),
-          const SizedBox(width: 10),
-          Expanded(child: _buildKey(labels[1])),
-          const SizedBox(width: 10),
-          Expanded(child: _buildKey(labels[2])),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomRow(AppLocalizations l10n) {
-    return Expanded(
-      child: Row(
-        children: [
-          Expanded(
-            child: InkWell(
-              onTap: _onBackspace,
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(Icons.backspace, size: 24),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: _buildKey('0')),
-          const SizedBox(width: 10),
-          Expanded(child: _buildActionButton(l10n.clear, Colors.orange, _onClear)),
-        ],
+  Widget _buildBackspaceKey() {
+    return InkWell(
+      onTap: _onBackspace,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.center,
+        child: const Icon(Icons.backspace, size: 24),
       ),
     );
   }
@@ -192,7 +163,7 @@ class _PinInputDialogState extends State<PinInputDialog> {
           ],
         ),
         alignment: Alignment.center,
-        child: Text(label, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        child: Text(label, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
       ),
     );
   }
