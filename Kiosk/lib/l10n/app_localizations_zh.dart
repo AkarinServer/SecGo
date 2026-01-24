@@ -262,6 +262,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get locationPermissionRequired => '开启热点需要定位权限。';
 
   @override
+  String get locationServiceRequired => '请开启定位服务后再打开热点。';
+
+  @override
+  String hotspotFailedWithReason(Object reason) {
+    return '热点开启失败：$reason';
+  }
+
+  @override
   String get mobileData => '移动数据';
 
   @override

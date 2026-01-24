@@ -76,6 +76,8 @@
   "ssidLabel": "SSID",
   "passwordLabel": "Password",
   "locationPermissionRequired": "Location permission is required to enable hotspot.",
+  "locationServiceRequired": "Please turn on Location service to enable hotspot.",
+  "hotspotFailedWithReason": "Hotspot failed: {reason}",
   "mobileData": "Mobile data",
   "mobileDataHint": "Toggle mobile data (may be restricted)",
   "networkToggleFailed": "Action failed. Opening system settings…",

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -23,6 +24,8 @@ class MainActivity : FlutterActivity() {
   private var localHotspotReservation: WifiManager.LocalOnlyHotspotReservation? = null
   private var localHotspotSsid: String? = null
   private var localHotspotPassword: String? = null
+  private var lastHotspotErrorCode: Int? = null
+  private var lastHotspotErrorMessage: String? = null
 
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
@@ -119,8 +122,18 @@ class MainActivity : FlutterActivity() {
             ),
           )
         }
+        "getHotspotLastError" -> {
+          result.success(
+            mapOf(
+              "code" to lastHotspotErrorCode,
+              "message" to lastHotspotErrorMessage,
+            ),
+          )
+        }
         "setHotspotEnabled" -> {
           val enabled = call.argument<Boolean>("enabled") == true
+          lastHotspotErrorCode = null
+          lastHotspotErrorMessage = null
           if (!enabled) {
             localHotspotReservation?.close()
             localHotspotReservation = null
@@ -136,12 +149,35 @@ class MainActivity : FlutterActivity() {
           }
 
           if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            lastHotspotErrorMessage = "unsupported_sdk"
             result.success(false)
             return@setMethodCallHandler
           }
 
           try {
             val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            if (!wifiManager.isWifiEnabled) {
+              try {
+                @Suppress("DEPRECATION")
+                wifiManager.isWifiEnabled = true
+              } catch (_: Exception) {
+              }
+            }
+
+            val locationManager = applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val locationEnabled =
+              try {
+                locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                  locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+              } catch (_: Exception) {
+                false
+              }
+            if (!locationEnabled) {
+              lastHotspotErrorMessage = "location_disabled"
+              result.success(false)
+              return@setMethodCallHandler
+            }
+
             wifiManager.startLocalOnlyHotspot(
               object : WifiManager.LocalOnlyHotspotCallback() {
                 override fun onStarted(reservation: WifiManager.LocalOnlyHotspotReservation) {
@@ -164,12 +200,21 @@ class MainActivity : FlutterActivity() {
                   localHotspotReservation = null
                   localHotspotSsid = null
                   localHotspotPassword = null
+                  lastHotspotErrorCode = reason
+                  lastHotspotErrorMessage =
+                    when (reason) {
+                      WifiManager.LocalOnlyHotspotCallback.ERROR_NO_CHANNEL -> "no_channel"
+                      WifiManager.LocalOnlyHotspotCallback.ERROR_TETHERING_DISALLOWED -> "tethering_disallowed"
+                      WifiManager.LocalOnlyHotspotCallback.ERROR_INCOMPATIBLE_MODE -> "incompatible_mode"
+                      else -> "failed_$reason"
+                    }
                   result.success(false)
                 }
               },
               Handler(Looper.getMainLooper()),
             )
           } catch (_: Exception) {
+            lastHotspotErrorMessage = "exception"
             result.success(false)
           }
         }
@@ -178,6 +223,13 @@ class MainActivity : FlutterActivity() {
             startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
           } catch (_: Exception) {
             startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+          }
+          result.success(true)
+        }
+        "openLocationSettings" -> {
+          try {
+            startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+          } catch (_: Exception) {
           }
           result.success(true)
         }
@@ -285,6 +337,8 @@ class MainActivity : FlutterActivity() {
     localHotspotReservation = null
     localHotspotSsid = null
     localHotspotPassword = null
+    lastHotspotErrorCode = null
+    lastHotspotErrorMessage = null
     super.onDestroy()
   }
 

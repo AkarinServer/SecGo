@@ -267,6 +267,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Location permission is required to enable hotspot.';
 
   @override
+  String get locationServiceRequired =>
+      'Please turn on Location service to enable hotspot.';
+
+  @override
+  String hotspotFailedWithReason(Object reason) {
+    return 'Hotspot failed: $reason';
+  }
+
+  @override
   String get mobileData => 'Mobile data';
 
   @override

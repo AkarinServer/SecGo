@@ -76,6 +76,8 @@
   "ssidLabel": "名称",
   "passwordLabel": "密码",
   "locationPermissionRequired": "开启热点需要定位权限。",
+  "locationServiceRequired": "请开启定位服务后再打开热点。",
+  "hotspotFailedWithReason": "热点开启失败：{reason}",
   "mobileData": "移动数据",
   "mobileDataHint": "切换移动数据（可能受系统限制）",
   "networkToggleFailed": "操作失败，正在打开系统设置…",

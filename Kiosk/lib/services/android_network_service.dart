@@ -46,6 +46,18 @@ class AndroidNetworkService {
     await _channel.invokeMethod<void>('openHotspotSettings');
   }
 
+  Future<Map<String, dynamic>> getHotspotLastError() async {
+    final raw = await _channel.invokeMethod<dynamic>('getHotspotLastError');
+    if (raw is Map) {
+      return raw.map((k, v) => MapEntry(k.toString(), v));
+    }
+    return const <String, dynamic>{};
+  }
+
+  Future<void> openLocationSettings() async {
+    await _channel.invokeMethod<void>('openLocationSettings');
+  }
+
   Future<bool> getMobileDataEnabled() async {
     final enabled = await _channel.invokeMethod<bool>('getMobileDataEnabled');
     return enabled ?? false;

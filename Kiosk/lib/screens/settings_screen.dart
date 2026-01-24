@@ -308,10 +308,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final ok = await _networkService.setHotspotEnabled(enabled);
       if (!ok) {
+        final err = await _networkService.getHotspotLastError();
+        final message = (err['message'] ?? '').toString();
+        if (message == 'location_disabled') {
+          await _networkService.openLocationSettings();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.locationServiceRequired)),
+            );
+          }
+          return;
+        }
         await _networkService.openHotspotSettings();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.networkToggleFailed)),
+            SnackBar(
+              content: Text(
+                message.isEmpty ? l10n.networkToggleFailed : l10n.hotspotFailedWithReason(message),
+              ),
+            ),
           );
         }
       }

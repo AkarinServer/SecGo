@@ -560,6 +560,18 @@ abstract class AppLocalizations {
   /// **'Location permission is required to enable hotspot.'**
   String get locationPermissionRequired;
 
+  /// No description provided for @locationServiceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please turn on Location service to enable hotspot.'**
+  String get locationServiceRequired;
+
+  /// No description provided for @hotspotFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot failed: {reason}'**
+  String hotspotFailedWithReason(Object reason);
+
   /// No description provided for @mobileData.
   ///
   /// In en, this message translates to:
