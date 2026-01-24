@@ -20,7 +20,8 @@ class KioskBackupScreen extends StatefulWidget {
 class _KioskBackupScreenState extends State<KioskBackupScreen> {
   final KioskClientService _kioskService = KioskClientService();
   final KioskConnectionService _connectionService = KioskConnectionService();
-  List<FileSystemEntity> _backups = [];
+  List<_BackupEntry> _backups = [];
+  bool _showAllKiosks = true;
   bool _isLoading = false;
 
   @override
@@ -48,19 +49,59 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
 
   Future<void> _loadBackups() async {
     final dir = await getApplicationSupportDirectory();
-    final backupDir = Directory(path.join(dir.path, 'backups', 'kiosk_${widget.kiosk.id}'));
-    if (await backupDir.exists()) {
-      setState(() {
-        _backups = backupDir.listSync()
-            .where((e) => e.path.endsWith('.db'))
-            .toList()
-          ..sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
-      });
-    } else {
-      setState(() {
-        _backups = [];
-      });
+    final root = Directory(path.join(dir.path, 'backups'));
+    if (!await root.exists()) {
+      if (mounted) setState(() => _backups = []);
+      return;
     }
+
+    final entries = <_BackupEntry>[];
+    if (_showAllKiosks) {
+      final children = root.listSync();
+      for (final entity in children) {
+        if (entity is! Directory) continue;
+        final name = path.basename(entity.path);
+        final sourceId = _parseKioskIdFromDirName(name);
+        final dbFiles = entity
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.db'))
+            .toList();
+        for (final f in dbFiles) {
+          entries.add(_BackupEntry(file: f, sourceKioskId: sourceId, modified: f.statSync().modified));
+        }
+      }
+    } else {
+      final kioskKey = _kioskBackupKey();
+      final backupDir = Directory(path.join(root.path, kioskKey));
+      if (await backupDir.exists()) {
+        final dbFiles = backupDir
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.db'))
+            .toList();
+        for (final f in dbFiles) {
+          entries.add(_BackupEntry(file: f, sourceKioskId: widget.kiosk.id, modified: f.statSync().modified));
+        }
+      }
+    }
+
+    entries.sort((a, b) => b.modified.compareTo(a.modified));
+    if (mounted) setState(() => _backups = entries);
+  }
+
+  String _kioskBackupKey() {
+    final id = widget.kiosk.id;
+    if (id != null) return 'kiosk_$id';
+    final deviceId = widget.kiosk.deviceId;
+    if (deviceId != null && deviceId.isNotEmpty) return 'kiosk_$deviceId';
+    return 'kiosk_${widget.kiosk.ip}';
+  }
+
+  int? _parseKioskIdFromDirName(String name) {
+    final match = RegExp(r'^kiosk_(\d+)$').firstMatch(name);
+    if (match == null) return null;
+    return int.tryParse(match.group(1)!);
   }
 
   Future<void> _createBackup() async {
@@ -75,7 +116,7 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
     setState(() => _isLoading = true);
     try {
       final dir = await getApplicationSupportDirectory();
-      final backupDir = Directory(path.join(dir.path, 'backups', 'kiosk_${widget.kiosk.id}'));
+      final backupDir = Directory(path.join(dir.path, 'backups', _kioskBackupKey()));
       if (!await backupDir.exists()) {
         await backupDir.create(recursive: true);
       }
@@ -204,6 +245,27 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
                     ),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          Localizations.localeOf(context).languageCode == 'zh'
+                              ? '显示全部终端备份'
+                              : 'Show backups from all kiosks',
+                        ),
+                      ),
+                      Switch(
+                        value: _showAllKiosks,
+                        onChanged: (v) async {
+                          setState(() => _showAllKiosks = v);
+                          await _loadBackups();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 const Divider(),
                 Expanded(
                   child: _backups.isEmpty
@@ -211,15 +273,22 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
                       : ListView.builder(
                           itemCount: _backups.length,
                           itemBuilder: (context, index) {
-                            final file = _backups[index] as File;
-                            final stat = file.statSync();
+                            final entry = _backups[index];
+                            final file = entry.file;
                             final name = path.basename(file.path);
-                            final date = DateFormat('yyyy-MM-dd HH:mm').format(stat.modified);
+                            final date = DateFormat('yyyy-MM-dd HH:mm').format(entry.modified);
+                            final sourceLabel = entry.sourceKioskId == null
+                                ? (Localizations.localeOf(context).languageCode == 'zh'
+                                    ? '来源：未知终端'
+                                    : 'Source: unknown kiosk')
+                                : (Localizations.localeOf(context).languageCode == 'zh'
+                                    ? '来源：终端 ${entry.sourceKioskId}'
+                                    : 'Source: kiosk ${entry.sourceKioskId}');
 
                             return ListTile(
                               leading: const Icon(Icons.backup),
                               title: Text(name),
-                              subtitle: Text(date),
+                              subtitle: Text('$date • $sourceLabel'),
                               trailing: ElevatedButton(
                                 onPressed: isConnected ? () => _restoreBackup(file) : null,
                                 child: Text(l10n.restore),
@@ -232,4 +301,16 @@ class _KioskBackupScreenState extends State<KioskBackupScreen> {
             ),
     );
   }
+}
+
+class _BackupEntry {
+  final File file;
+  final int? sourceKioskId;
+  final DateTime modified;
+
+  const _BackupEntry({
+    required this.file,
+    required this.sourceKioskId,
+    required this.modified,
+  });
 }
