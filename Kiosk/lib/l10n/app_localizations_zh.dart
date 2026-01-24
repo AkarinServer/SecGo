@@ -190,4 +190,35 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get returningHome => '正在刷新数据...';
+
+  @override
+  String get openLauncher => '打开桌面启动器';
+
+  @override
+  String launcherTarget(Object target) {
+    return '目标：$target';
+  }
+
+  @override
+  String get launcherDefault => '桌面启动器';
+
+  @override
+  String get homeAppPackageTitle => '首页应用包名（可选）';
+
+  @override
+  String get homeAppPackageHint => '例如：com.secgo.home';
+
+  @override
+  String get homeAppNotSet => '未设置（使用桌面启动器）';
+
+  @override
+  String homeAppOpenFailed(Object package) {
+    return '无法打开 $package，将打开桌面启动器。';
+  }
+
+  @override
+  String get clear => '清除';
+
+  @override
+  String get save => '保存';
 }

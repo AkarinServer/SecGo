@@ -632,11 +632,16 @@ class _MainScreenState extends State<MainScreen> {
                          // Settings Button (Hidden access)
                         IconButton(
                           icon: const Icon(Icons.settings, color: Colors.grey),
-                          onPressed: () {
-                            Navigator.push(
+                          onPressed: () async {
+                            final result = await Navigator.push(
                               context,
                               MaterialPageRoute(builder: (_) => const SettingsScreen()),
                             );
+                            if (!mounted) return;
+                            if (result == 'reset') {
+                              _clearCart();
+                              setState(() => _isProcessing = false);
+                            }
                           },
                         ),
                       ],

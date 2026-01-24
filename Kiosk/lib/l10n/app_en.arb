@@ -53,5 +53,14 @@
   "retry": "Retry",
   "serverNoIp": "Failed to start server: No IP address found",
   "restoreComplete": "Restore Complete",
-  "returningHome": "Refreshing data..."
+  "returningHome": "Refreshing data...",
+  "openLauncher": "Open Launcher",
+  "launcherTarget": "Target: {target}",
+  "launcherDefault": "Launcher",
+  "homeAppPackageTitle": "Home app package (optional)",
+  "homeAppPackageHint": "e.g. com.secgo.home",
+  "homeAppNotSet": "Not set (use Launcher)",
+  "homeAppOpenFailed": "Can't open {package}. Opening Launcher instead.",
+  "clear": "Clear",
+  "save": "Save"
 }

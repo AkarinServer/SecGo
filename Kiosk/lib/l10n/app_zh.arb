@@ -53,5 +53,14 @@
   "pinLength": "PIN码至少需要4位数字",
   "confirmPin": "确认PIN码",
   "pinMismatch": "两次输入的PIN码不一致",
-  "saveAndContinue": "保存并继续"
+  "saveAndContinue": "保存并继续",
+  "openLauncher": "打开桌面启动器",
+  "launcherTarget": "目标：{target}",
+  "launcherDefault": "桌面启动器",
+  "homeAppPackageTitle": "首页应用包名（可选）",
+  "homeAppPackageHint": "例如：com.secgo.home",
+  "homeAppNotSet": "未设置（使用桌面启动器）",
+  "homeAppOpenFailed": "无法打开 {package}，将打开桌面启动器。",
+  "clear": "清除",
+  "save": "保存"
 }

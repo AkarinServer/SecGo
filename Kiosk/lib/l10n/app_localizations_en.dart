@@ -194,4 +194,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get returningHome => 'Refreshing data...';
+
+  @override
+  String get openLauncher => 'Open Launcher';
+
+  @override
+  String launcherTarget(Object target) {
+    return 'Target: $target';
+  }
+
+  @override
+  String get launcherDefault => 'Launcher';
+
+  @override
+  String get homeAppPackageTitle => 'Home app package (optional)';
+
+  @override
+  String get homeAppPackageHint => 'e.g. com.secgo.home';
+
+  @override
+  String get homeAppNotSet => 'Not set (use Launcher)';
+
+  @override
+  String homeAppOpenFailed(Object package) {
+    return 'Can\'t open $package. Opening Launcher instead.';
+  }
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get save => 'Save';
 }

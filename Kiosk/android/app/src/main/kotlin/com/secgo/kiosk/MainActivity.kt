@@ -43,6 +43,30 @@ class MainActivity : FlutterActivity() {
         "getLatestWechatNotification" -> result.success(getLatestWechatNotification())
         "getLatestWechatPaymentNotification" -> result.success(getLatestWechatPaymentNotification())
         "getActiveWechatNotificationsSnapshot" -> result.success(getActiveWechatNotificationsSnapshot())
+        "openLauncherHome" -> {
+          val intent =
+            Intent(Intent.ACTION_MAIN).apply {
+              addCategory(Intent.CATEGORY_HOME)
+              addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+          startActivity(intent)
+          result.success(true)
+        }
+        "openApp" -> {
+          val pkg = call.argument<String>("packageName")?.trim()
+          if (pkg.isNullOrBlank()) {
+            result.success(false)
+            return@setMethodCallHandler
+          }
+          val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+          if (launchIntent == null) {
+            result.success(false)
+            return@setMethodCallHandler
+          }
+          launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          startActivity(launchIntent)
+          result.success(true)
+        }
         "openNotificationListenerSettings" -> {
           startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
           result.success(true)
