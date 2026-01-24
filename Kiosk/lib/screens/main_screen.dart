@@ -9,6 +9,7 @@ import 'package:kiosk/models/product.dart';
 import 'package:kiosk/models/order.dart' as model; // Alias to avoid conflict if needed
 import 'package:kiosk/screens/payment_screen.dart';
 import 'package:kiosk/screens/manual_barcode_dialog.dart';
+import 'package:kiosk/screens/pin_input_dialog.dart';
 import 'package:kiosk/screens/no_barcode_products_dialog.dart';
 import 'package:kiosk/screens/settings_screen.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -182,42 +183,12 @@ class _MainScreenState extends State<MainScreen> {
     final expected = _settingsService.getPin();
     if (expected == null || expected.isEmpty) return true;
 
-    final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController();
-    final ok = await showDialog<bool>(
+    final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(l10n.adminConfirm),
-          content: TextField(
-            controller: controller,
-            obscureText: true,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: l10n.enterPin),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () {
-                if (controller.text.trim() == expected) {
-                  Navigator.pop(dialogContext, true);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.invalidPin)),
-                  );
-                }
-              },
-              child: Text(l10n.confirm),
-            ),
-          ],
-        );
-      },
+      builder: (dialogContext) => PinInputDialog(expectedPin: expected),
     );
-    return ok ?? false;
+    return result ?? false;
   }
 
   Future<void> _resumePendingPaymentIfAny() async {
